@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "PySpark Benchmark"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "8e0de9ed-b936-ae4f-4a0c-dcf584c62ae6"
+  }
+}
