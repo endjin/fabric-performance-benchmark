@@ -138,7 +138,7 @@ class BenchmarkManager:
             .with_row_index("order", offset=1)
             .with_columns((pl.col("stage_time") - pl.col("stage_time").shift(1)).alias("stage_time_delta"))
         )
-        # records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
+        records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
         return records_to_export
 
 
@@ -171,7 +171,7 @@ storage_options = create_storage_options()
 benchmark_manager = BenchmarkManager(
     workload_name="Polars Benchmark",
     run_timestamp=run_timestamp,
-    export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmarks",
+    export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
     storage_options=storage_options
 )
 
@@ -185,72 +185,6 @@ benchmark_manager = BenchmarkManager(
 # CELL ********************
 
 benchmark_manager.capture_benchmark("start")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("ingest")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("transform")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("read")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("summarise")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.export_results()
 
 # METADATA ********************
 
@@ -299,7 +233,7 @@ price_paid_data = pl.scan_csv(
 
 # CELL ********************
 
-ingest_end = time.perf_counter()
+benchmark_manager.capture_benchmark("ingest")
 
 # METADATA ********************
 
@@ -404,7 +338,7 @@ price_paid_data = (
 
 # CELL ********************
 
-transform_end = time.perf_counter()
+benchmark_manager.capture_benchmark("transform")
 
 # METADATA ********************
 
@@ -440,7 +374,7 @@ prices = price_paid_data.select([
 
 # CELL ********************
 
-fact_table_end = time.perf_counter()
+benchmark_manager.capture_benchmark("create_prices")
 
 # METADATA ********************
 
@@ -500,7 +434,7 @@ dates = (
 
 # CELL ********************
 
-date_dimension_end = time.perf_counter()
+benchmark_manager.capture_benchmark("create_dates")
 
 # METADATA ********************
 
@@ -542,7 +476,7 @@ locations = (
 
 # CELL ********************
 
-location_dimension_end = time.perf_counter()
+benchmark_manager.capture_benchmark("create_locations")
 
 # METADATA ********************
 
@@ -575,7 +509,7 @@ prices.write_delta(target_path_prices, mode="overwrite", storage_options=storage
 
 # CELL ********************
 
-write_prices_end = time.perf_counter()
+benchmark_manager.capture_benchmark("write_prices")
 
 # METADATA ********************
 
@@ -603,7 +537,7 @@ locations.write_delta(target_path_locations, mode="overwrite", storage_options=s
 
 # CELL ********************
 
-write_locations_end = time.perf_counter()
+benchmark_manager.capture_benchmark("write_locations")
 
 # METADATA ********************
 
@@ -630,7 +564,7 @@ dates.write_delta(target_path_dates, mode="overwrite", storage_options=storage_o
 
 # CELL ********************
 
-write_dates_end = time.perf_counter()
+benchmark_manager.capture_benchmark("write_dates")
 
 # METADATA ********************
 
@@ -668,7 +602,7 @@ prices = (
 
 # CELL ********************
 
-read_prices_end = time.perf_counter()
+benchmark_manager.capture_benchmark("read_prices")
 
 # METADATA ********************
 
@@ -702,7 +636,7 @@ dates = (
 
 # CELL ********************
 
-read_dates_end = time.perf_counter()
+benchmark_manager.capture_benchmark("read_dates")
 
 # METADATA ********************
 
@@ -798,7 +732,7 @@ monthly_summary.head(5)
 
 # CELL ********************
 
-join_and_summarise_end = time.perf_counter()
+benchmark_manager.capture_benchmark("join_and_summarise")
 
 # METADATA ********************
 
@@ -809,42 +743,30 @@ join_and_summarise_end = time.perf_counter()
 
 # CELL ********************
 
-end = time.perf_counter()
-elapsed = end - start
+benchmark_results = benchmark_manager.export_results()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-import psutil
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-psutil.cpu_percent(interval=None)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-psutil.virtual_memory().percent
 
 # METADATA ********************
 
