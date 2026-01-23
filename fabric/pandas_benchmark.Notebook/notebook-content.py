@@ -11,8 +11,8 @@
 
 # CELL ********************
 
-## %%configure -f
-# {"vCores": 8}
+# MAGIC %%configure -f
+# MAGIC {"vCores": 8}
 
 # METADATA ********************
 
@@ -164,7 +164,7 @@ class BenchmarkManager:
 run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Contruct source path for raw data
-source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
+source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}"
 
 # Construct base path for lakehouse schema
 schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/polars_benchmark_{run_timestamp}"
@@ -203,21 +203,13 @@ benchmark_manager.capture_benchmark("start")
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ## Ingest Raw Data
+
 # CELL ********************
 
 source_files = [file.path for file in notebookutils.fs.ls(source_path)]
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-# Unfortunately we hit out of memory exception when we load all 30 years, so to allow the notebook to complete, we'll process 10
-source_files = source_files[0:10]
 
 # METADATA ********************
 
@@ -295,6 +287,17 @@ logger.info(f"Loaded all source files into single dataframe.")
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("ingest")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ## Data Transformation
@@ -311,7 +314,11 @@ property_type_mapping = {
     "F": "Flat/Maisonette",
     "O": "Other"
 }
-price_paid_data["property_type"] = price_paid_data["property_type"].map(property_type_mapping).fillna(price_paid_data["property_type"])
+price_paid_data["property_type"] = (
+    price_paid_data["property_type"]
+    .map(property_type_mapping)
+    .fillna(price_paid_data["property_type"])
+)
 
 # METADATA ********************
 
@@ -372,6 +379,17 @@ price_paid_data["date_of_transfer"] = price_paid_data["date_of_transfer"].dt.dat
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("transform")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ### Create fact table
@@ -389,6 +407,17 @@ prices = price_paid_data[[
     "property_type",
     "old_new",
 ]]
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_prices")
 
 # METADATA ********************
 
@@ -436,6 +465,17 @@ dates["date"] = dates["date"].dt.date
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ### Create location dimension
@@ -461,74 +501,38 @@ locations = price_paid_data[[
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_locations")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ## Writing to Delta Tables
 # 
 # It is common practice to write out a Pandas DataFrame to a Delta table in the Tables area of your Lakehouse.
-# 
-# There are various write modes which are available:
-# 
-# Overwrite entire table:
-# 
-# ```python
-# write_deltalake(path, df, mode="overwrite")
-# ```
-# 
-# Append to existing table:
-# 
-# ```python
-# write_deltalake(path, df, mode="append")
-# ```
-# 
-# Merge (upsert) - use DeltaTable API:
-# 
-# ```python
-# dt = DeltaTable(path)
-# (
-#     dt.merge(
-#         source=df,
-#         predicate="source.id = target.id",
-#         source_alias="source",
-#         target_alias="target"
-#     )
-#     .when_matched_update_all()
-#     .when_not_matched_insert_all()
-#     .execute()
-# )
-# ```
 
 # MARKDOWN ********************
 
-# ### Handling Timestamps
-# 
-# A common gotcha when writing Delta tables from Pandas is timezone handling. Fabric's SQL endpoint expects timestamps with timezone information.
-# 
-# We can address this by adding timezone information, for example:
-# 
-# ```python
-# df["datetime_of_order"] = df["datetime_of_order"].dt.tz_localize("UTC")
-# ```
-
-# MARKDOWN ********************
-
-# ### Write tables
-
-# CELL ********************
-
-target_path_prices
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
+# ### Write Prices
 
 # CELL ********************
 
 logger.info(f"Writing prices data to Parquet: {target_path_prices}")
-write_deltalake(target_path_prices, prices, mode='overwrite', schema_mode='merge', engine='rust', storage_options=storage_options)
+write_deltalake(
+    target_path_prices,
+    prices,
+    mode='overwrite',
+    schema_mode='merge',
+    engine='rust',
+    storage_options=storage_options
+)
 
 # METADATA ********************
 
@@ -536,6 +540,21 @@ write_deltalake(target_path_prices, prices, mode='overwrite', schema_mode='merge
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_prices")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Write Locations
 
 # CELL ********************
 
@@ -558,8 +577,41 @@ write_deltalake(
 
 # CELL ********************
 
+benchmark_manager.capture_benchmark("write_locations")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Write Dates
+
+# CELL ********************
+
 logger.info(f"Writing dates data to Parquet: {target_path_dates}")
-write_deltalake(target_path_dates, dates, mode='overwrite', schema_mode='merge', engine='rust', storage_options=storage_options)
+write_deltalake(
+    target_path_dates,
+    dates,
+    mode='overwrite',
+    schema_mode='merge',
+    engine='rust',
+    storage_options=storage_options
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_dates")
 
 # METADATA ********************
 
@@ -573,6 +625,10 @@ write_deltalake(target_path_dates, dates, mode='overwrite', schema_mode='merge',
 # ## Reading from DeltaLake and generate summary
 # 
 # Let's illustrate this by generating some analytics in this notebook using the data we have just written to the lakehouse in Delta format.
+
+# MARKDOWN ********************
+
+# ### Read Prices
 
 # CELL ********************
 
@@ -590,7 +646,7 @@ prices = prices[prices["property_type"] != "Other"]
 
 # CELL ********************
 
-prices.info()
+benchmark_manager.capture_benchmark("read_prices")
 
 # METADATA ********************
 
@@ -599,16 +655,9 @@ prices.info()
 # META   "language_group": "jupyter_python"
 # META }
 
-# CELL ********************
+# MARKDOWN ********************
 
-prices.loc[0:3, "date_of_transfer"][0]
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
+# ### Read Dates
 
 # CELL ********************
 
@@ -635,6 +684,21 @@ dates["date"] = dates["date"].dt.date
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("read_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Join and Summarise
 
 # CELL ********************
 
@@ -701,7 +765,40 @@ monthly_summary.head(5)
 
 # CELL ********************
 
-elapsed = time.perf_counter() - start
+benchmark_manager.capture_benchmark("join_and_summarise")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results = benchmark_manager.export_results()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
 
 # METADATA ********************

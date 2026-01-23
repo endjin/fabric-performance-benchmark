@@ -28,12 +28,16 @@
 
 # CELL ********************
 
+# Common imports
 import time
 import logging
 from datetime import datetime
 from dataclasses import dataclass, asdict
 import psutil
+import json
 import notebookutils
+
+# Imports unique to Polars version of notebook
 import polars as pl
 
 # METADATA ********************
