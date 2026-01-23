@@ -24,9 +24,17 @@
 # 
 # DuckDB is an in-process SQL OLAP database that excels at analytical queries. It provides a familiar SQL interface while delivering excellent performance on single-node workloads.
 
+# MARKDOWN ********************
+
+# ## Set up
+
 # CELL ********************
 
-# Common code used to set up all notebooks
+import time
+import logging
+from datetime import datetime
+from dataclasses import dataclass, asdict
+import psutil
 import notebookutils
 
 WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
@@ -46,26 +54,54 @@ def create_storage_options() -> dict:
         "use_fabric_endpoint": "true"
     }
 
-source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}"
-
-storage_options = create_storage_options()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-import time
-import logging
-from datetime import datetime
-
 # Imports specific to duckdb version of notebook
 import duckdb
+import polars as pl
 from deltalake import write_deltalake  # Unfortunately duckdb does not yet support writing to Azure, so we need write_deltalake to address that requirement
+
+# Data class to store benchmark metrics at key points during notebook process 
+@dataclass
+class Benchmark:
+    workload_name: str
+    run_timestamp: str
+    stage_name: str
+    stage_time: float
+    cpu: float
+    memory: float
+
+# Benchmark Manager class will help capture benchmarks consistently, then write them out to lakehouse at end of notebook
+class BenchmarkManager:
+
+    benchmarks = []
+
+    def __init__(self, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
+        self.workload_name=workload_name
+        self.run_timestamp=run_timestamp
+        self.export_abfss_path=export_abfss_path
+        self.storage_options=storage_options
+    
+    def capture_benchmark(self, stage_name):
+        self.benchmarks.append(
+            Benchmark(
+                workload_name=self.workload_name,
+                run_timestamp=self.run_timestamp,
+                stage_name=stage_name,
+                stage_time=time.perf_counter(),
+                cpu=psutil.cpu_percent(interval=None),
+                memory=psutil.virtual_memory().percent,
+            )
+        )
+    
+    def export_results(self):
+        records_to_export = pl.DataFrame([asdict(benchmark) for benchmark in self.benchmarks])
+        records_to_export = (
+            records_to_export
+            .sort("stage_time", descending=False)
+            .with_row_index("order", offset=1)
+            .with_columns((pl.col("stage_time") - pl.col("stage_time").shift(1)).alias("stage_time_delta"))
+        )
+        records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
+        return records_to_export
 
 # METADATA ********************
 
@@ -128,13 +164,27 @@ con.execute("LOAD azure;")
 
 run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-source_path = f"{source_path}/*.csv"
+# Contruct source path for raw data
+source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
+# Construct base path for lakehouse schema
 schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/duckdb_benchmark_{run_timestamp}"
 
+# Now construct paths to tables in that schema
 target_path_prices = f"{schema_path}/prices"
 target_path_locations = f"{schema_path}/locations"
 target_path_dates = f"{schema_path}/dates"
+
+# Create storage options
+storage_options = create_storage_options()
+
+# Set up benchmark manager
+benchmark_manager = BenchmarkManager(
+    workload_name="DuckDB Benchmark",
+    run_timestamp=run_timestamp,
+    export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
+    storage_options=storage_options
+)
 
 # METADATA ********************
 
@@ -145,7 +195,7 @@ target_path_dates = f"{schema_path}/dates"
 
 # CELL ********************
 
-start = time.perf_counter()
+benchmark_manager.capture_benchmark("start")
 
 # METADATA ********************
 
@@ -153,6 +203,10 @@ start = time.perf_counter()
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# MARKDOWN ********************
+
+# ## Ingest Raw Data
 
 # CELL ********************
 
@@ -185,6 +239,17 @@ con.execute(f"""
         nullstr=''
     )
 """)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("ingest")
 
 # METADATA ********************
 
@@ -248,6 +313,17 @@ con.execute("""
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("transform")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ### Create fact table
@@ -268,6 +344,17 @@ con.execute("""
         old_new
     FROM price_paid_data
 """)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_prices")
 
 # METADATA ********************
 
@@ -332,6 +419,17 @@ con.execute(f"""
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ### Create location dimension
@@ -361,6 +459,17 @@ con.execute("""
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_locations")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ## Writing to OneLake Tables (managed tabular storage)
@@ -371,7 +480,7 @@ con.execute("""
 
 # MARKDOWN ********************
 
-# ### Write tables
+# ### Write Prices
 
 # CELL ********************
 
@@ -394,6 +503,21 @@ write_deltalake(
 
 # CELL ********************
 
+benchmark_manager.capture_benchmark("write_prices")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Write Locations
+
+# CELL ********************
+
 logger.info(f"Writing locations data to Parquet: {target_path_locations}")
 write_deltalake(
     target_path_locations,
@@ -410,6 +534,21 @@ write_deltalake(
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_locations")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Write Dates
 
 # CELL ********************
 
@@ -430,6 +569,17 @@ write_deltalake(
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ## Reading from Delta Lake and generate summary
@@ -437,6 +587,10 @@ write_deltalake(
 # DuckDB can read Delta tables directly using the `delta_scan` function.
 # 
 # Let's generate some analytics using the data we have just written.
+
+# MARKDOWN ********************
+
+# ### Read Prices
 
 # CELL ********************
 
@@ -458,6 +612,21 @@ con.execute(f"""
 
 # CELL ********************
 
+benchmark_manager.capture_benchmark("read_prices")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Read Dates
+
+# CELL ********************
+
 # Load the date dimension with month_tag column
 logger.info(f"Reading dates data back from Parquet: {target_path_dates}")
 con.execute(f"""
@@ -474,6 +643,21 @@ con.execute(f"""
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("read_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Join and Summarise
 
 # CELL ********************
 
@@ -518,7 +702,40 @@ monthly_summary.head(5)
 
 # CELL ********************
 
-elapsed = time.perf_counter() - start
+benchmark_manager.capture_benchmark("join_and_summarise")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results = benchmark_manager.export_results()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
 
 # METADATA ********************

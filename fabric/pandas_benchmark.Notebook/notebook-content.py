@@ -34,6 +34,9 @@
 # 1. Load raw data, clean it up, add new features and finally write it as a mini dimensional model (prices, locations, dates) to the lakehouse.
 # 1. Query two of the tables in the dimensional model, join them and summarise the data.
 
+# MARKDOWN ********************
+
+# ## Set up
 
 # CELL ********************
 
@@ -167,7 +170,7 @@ run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
 # Construct base path for lakehouse schema
-schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/polars_benchmark_{run_timestamp}"
+schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/pandas_benchmark_{run_timestamp}"
 
 # Now construct paths to tables in that schema
 target_path_prices = f"{schema_path}/prices"
@@ -179,7 +182,7 @@ storage_options = create_storage_options()
 
 # Set up benchmark manager
 benchmark_manager = BenchmarkManager(
-    workload_name="Polars Benchmark",
+    workload_name="Pandas Benchmark",
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
     storage_options=storage_options
@@ -202,6 +205,10 @@ benchmark_manager.capture_benchmark("start")
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# MARKDOWN ********************
+
+# ## Ingest Raw Data
 
 # CELL ********************
 
@@ -295,6 +302,17 @@ logger.info(f"Loaded all source files into single dataframe.")
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("ingest")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ## Data Transformation
@@ -372,6 +390,17 @@ price_paid_data["date_of_transfer"] = price_paid_data["date_of_transfer"].dt.dat
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("transform")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ### Create fact table
@@ -389,6 +418,17 @@ prices = price_paid_data[[
     "property_type",
     "old_new",
 ]]
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_prices")
 
 # METADATA ********************
 
@@ -436,6 +476,17 @@ dates["date"] = dates["date"].dt.date
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ### Create location dimension
@@ -453,6 +504,17 @@ locations = price_paid_data[[
     "district",
     "town_city",
 ]].drop_duplicates()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("create_locations")
 
 # METADATA ********************
 
@@ -512,7 +574,7 @@ locations = price_paid_data[[
 
 # MARKDOWN ********************
 
-# ### Write tables
+# ### Write Prices
 
 # CELL ********************
 
@@ -539,6 +601,21 @@ write_deltalake(target_path_prices, prices, mode='overwrite', schema_mode='merge
 
 # CELL ********************
 
+benchmark_manager.capture_benchmark("write_prices")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Write Locations
+
+# CELL ********************
+
 logger.info(f"Writing locations data to Parquet: {target_path_locations}")
 write_deltalake(
     target_path_locations,
@@ -558,8 +635,34 @@ write_deltalake(
 
 # CELL ********************
 
+benchmark_manager.capture_benchmark("write_locations")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Write Dates
+
+# CELL ********************
+
 logger.info(f"Writing dates data to Parquet: {target_path_dates}")
 write_deltalake(target_path_dates, dates, mode='overwrite', schema_mode='merge', engine='rust', storage_options=storage_options)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_dates")
 
 # METADATA ********************
 
@@ -574,12 +677,27 @@ write_deltalake(target_path_dates, dates, mode='overwrite', schema_mode='merge',
 # 
 # Let's illustrate this by generating some analytics in this notebook using the data we have just written to the lakehouse in Delta format.
 
+# MARKDOWN ********************
+
+# ### Read Prices
+
 # CELL ********************
 
 # Load prices from Parquet and filter them to exclude "Other" property types
 logger.info(f"Reading prices data back from Parquet: {target_path_prices}")
 prices = DeltaTable(target_path_prices, storage_options=storage_options).to_pyarrow_dataset().to_table().to_pandas()
 prices = prices[prices["property_type"] != "Other"]
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("read_prices")
 
 # METADATA ********************
 
@@ -610,6 +728,10 @@ prices.loc[0:3, "date_of_transfer"][0]
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ### Read Dates
+
 # CELL ********************
 
 # Load the date dimension, add a new month_tag column in the form YYYY_MM
@@ -635,6 +757,21 @@ dates["date"] = dates["date"].dt.date
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("read_dates")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ### Join and Summarise
 
 # CELL ********************
 
@@ -701,7 +838,40 @@ monthly_summary.head(5)
 
 # CELL ********************
 
-elapsed = time.perf_counter() - start
+benchmark_manager.capture_benchmark("join_and_summarise")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results = benchmark_manager.export_results()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_results
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
 
 # METADATA ********************
