@@ -9,6 +9,18 @@
 # META   }
 # META }
 
+# CELL ********************
+
+## %%configure -f
+# {"vCores": 8}
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # # Pandas Benchmark
@@ -22,38 +34,6 @@
 # 1. Load raw data, clean it up, add new features and finally write it as a mini dimensional model (prices, locations, dates) to the lakehouse.
 # 1. Query two of the tables in the dimensional model, join them and summarise the data.
 
-# CELL ********************
-
-# Common code used to set up all notebooks
-import notebookutils
-
-WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
-LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
-RAW_DATA_RELATIVE_PATH = "land_registry"
-
-def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
-    """Construct the base ABFSS path for a given workspace and lakehouse."""
-    # Because it is a URL, replace spaces with %20
-    workspace_name = workspace_name.replace(" ", "%20")
-    lakehouse_name = lakehouse_name.replace(" ", "%20")
-    return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
-
-def create_storage_options() -> dict:
-    return {
-        "bearer_token": notebookutils.credentials.getToken('storage'),
-        "use_fabric_endpoint": "true"
-    }
-
-source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}"
-
-storage_options = create_storage_options()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
 
 # CELL ********************
 
@@ -61,10 +41,13 @@ storage_options = create_storage_options()
 import time
 import logging
 from datetime import datetime
+from dataclasses import dataclass, asdict
+import psutil
+import notebookutils
+import polars as pl
 
 # Imports unique to Pandas version of notebook
 import pandas as pd
-import notebookutils
 from deltalake import write_deltalake, DeltaTable
 
 # METADATA ********************
@@ -88,13 +71,12 @@ logger.setLevel(logging.INFO)
 
 # CELL ********************
 
-run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+# Pre-requisities are to create a Fabric Workspace with a lakehouse, putting names here:
+WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
+LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
 
-schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/pandas_benchmark_{run_timestamp}"
-
-target_path_prices = f"{schema_path}/prices"
-target_path_locations = f"{schema_path}/locations"
-target_path_dates = f"{schema_path}/dates"
+# Path where raw data will be downloaded to
+RAW_DATA_RELATIVE_PATH = "land_registry"
 
 # METADATA ********************
 
@@ -105,7 +87,114 @@ target_path_dates = f"{schema_path}/dates"
 
 # CELL ********************
 
-start = time.perf_counter()
+# Common code used to set up all notebooks
+
+# Helper function to create base ABFSS path based on workspace and lakehouse name
+def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
+    """Construct the base ABFSS path for a given workspace and lakehouse."""
+    # Because it is a URL, replace spaces with %20
+    workspace_name = workspace_name.replace(" ", "%20")
+    lakehouse_name = lakehouse_name.replace(" ", "%20")
+    return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
+
+# Contruct base path
+source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}"
+
+# Helper function to create storage options that enable data tools to authenticate and interact with onelake storage
+def create_storage_options() -> dict:
+    return {
+        "bearer_token": notebookutils.credentials.getToken('storage'),
+        "use_fabric_endpoint": "true"
+    }
+
+# Data class to store benchmark metrics at key points during notebook process 
+@dataclass
+class Benchmark:
+    workload_name: str
+    run_timestamp: str
+    stage_name: str
+    stage_time: float
+    cpu: float
+    memory: float
+
+# Benchmark Manager class will help capture benchmarks consistently, then write them out to lakehouse at end of notebook
+class BenchmarkManager:
+
+    benchmarks = []
+
+    def __init__(self, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
+        self.workload_name=workload_name
+        self.run_timestamp=run_timestamp
+        self.export_abfss_path=export_abfss_path
+        self.storage_options=storage_options
+    
+    def capture_benchmark(self, stage_name):
+        self.benchmarks.append(
+            Benchmark(
+                workload_name=self.workload_name,
+                run_timestamp=self.run_timestamp,
+                stage_name=stage_name,
+                stage_time=time.perf_counter(),
+                cpu=psutil.cpu_percent(interval=None),
+                memory=psutil.virtual_memory().percent,
+            )
+        )
+    
+    def export_results(self):
+        records_to_export = pl.DataFrame([asdict(benchmark) for benchmark in self.benchmarks])
+        records_to_export = (
+            records_to_export
+            .sort("stage_time", descending=False)
+            .with_row_index("order", offset=1)
+            .with_columns((pl.col("stage_time") - pl.col("stage_time").shift(1)).alias("stage_time_delta"))
+        )
+        records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
+        return records_to_export
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# Contruct source path for raw data
+source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
+
+# Construct base path for lakehouse schema
+schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/polars_benchmark_{run_timestamp}"
+
+# Now construct paths to tables in that schema
+target_path_prices = f"{schema_path}/prices"
+target_path_locations = f"{schema_path}/locations"
+target_path_dates = f"{schema_path}/dates"
+
+# Create storage options
+storage_options = create_storage_options()
+
+# Set up benchmark manager
+benchmark_manager = BenchmarkManager(
+    workload_name="Polars Benchmark",
+    run_timestamp=run_timestamp,
+    export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
+    storage_options=storage_options
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("start")
 
 # METADATA ********************
 
