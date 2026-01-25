@@ -210,10 +210,6 @@ benchmark_manager.capture_benchmark("start")
 
 # ## Ingest Raw Data
 
-# MARKDOWN ********************
-
-# ## Ingest Raw Data
-
 # CELL ********************
 
 source_files = [file.path for file in notebookutils.fs.ls(source_path)]
@@ -591,7 +587,6 @@ write_deltalake(
     target_path_prices,
     prices,
     mode='overwrite',
-    schema_mode='merge',
     engine='rust',
     storage_options=storage_options
 )
@@ -625,7 +620,6 @@ write_deltalake(
     target_path_locations,
     locations,
     mode='overwrite',
-    schema_mode='merge',
     engine='rust',
     storage_options=storage_options
 )
@@ -674,7 +668,6 @@ write_deltalake(
     target_path_dates,
     dates,
     mode='overwrite',
-    schema_mode='merge',
     engine='rust',
     storage_options=storage_options
 )
@@ -930,6 +923,18 @@ benchmark_results
 
 elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+notebookutils.fs.rm(schema_path, recurse=True)
+logger.info(f"Cleaned up lakehouse by everything under {schema_path}")
 
 # METADATA ********************
 

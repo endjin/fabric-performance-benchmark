@@ -774,3 +774,15 @@ logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+notebookutils.fs.rm(schema_path, recurse=True)
+logger.info(f"Cleaned up lakehouse by everything under {schema_path}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }

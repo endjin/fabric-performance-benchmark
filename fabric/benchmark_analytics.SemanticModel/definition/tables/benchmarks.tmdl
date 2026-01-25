@@ -1,0 +1,92 @@
+table benchmarks
+	lineageTag: 45b7f556-b410-42a1-a3aa-08ec1f161908
+	sourceLineageTag: [benchmark_repository].[benchmarks]
+
+	column order
+		dataType: int64
+		formatString: 0
+		lineageTag: 4ebf61aa-919e-4e61-baac-80ce4e79603e
+		sourceLineageTag: order
+		summarizeBy: sum
+		sourceColumn: order
+
+		annotation SummarizationSetBy = Automatic
+
+	column workload_name
+		dataType: string
+		lineageTag: 6d30bc7c-2d27-427c-87c4-7fad89ff21b9
+		sourceLineageTag: workload_name
+		summarizeBy: none
+		sourceColumn: workload_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column run_timestamp
+		dataType: string
+		lineageTag: 89b2707e-6230-4ec6-9b10-eefabdb237e7
+		sourceLineageTag: run_timestamp
+		summarizeBy: none
+		sourceColumn: run_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column stage_name
+		dataType: string
+		lineageTag: 7cdc6ae3-b417-4274-b7ff-9d2cb36e1517
+		sourceLineageTag: stage_name
+		summarizeBy: none
+		sourceColumn: stage_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column stage_time
+		dataType: double
+		lineageTag: dee794da-5947-49a8-a860-23451c587a87
+		sourceLineageTag: stage_time
+		summarizeBy: sum
+		sourceColumn: stage_time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column cpu
+		dataType: double
+		lineageTag: 9d3c5b07-152c-4b17-85a7-6a3fb58ac923
+		sourceLineageTag: cpu
+		summarizeBy: sum
+		sourceColumn: cpu
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column memory
+		dataType: double
+		lineageTag: b0e4db66-79fd-4ad9-9135-4ffaada3dcd8
+		sourceLineageTag: memory
+		summarizeBy: sum
+		sourceColumn: memory
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stage_time_delta
+		dataType: double
+		lineageTag: 26c9ba6c-adb5-4a46-bf3a-9c23c96d2e7d
+		sourceLineageTag: stage_time_delta
+		summarizeBy: sum
+		sourceColumn: stage_time_delta
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition benchmarks = entity
+		mode: directLake
+		source
+			entityName: benchmarks
+			schemaName: benchmark_repository
+			expressionSource: 'DirectLake - fabric_performance_benchmark_lakehouse'
+

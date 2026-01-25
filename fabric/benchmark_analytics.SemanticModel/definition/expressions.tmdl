@@ -1,0 +1,9 @@
+expression 'DirectLake - fabric_performance_benchmark_lakehouse' =
+		let
+		    Source = AzureStorage.DataLake("https://onelake.dfs.fabric.microsoft.com/23d2362b-6b5f-4894-8472-c09991fc07a6/26fa5d18-b3bc-49f6-be0d-3424cd026fce", [HierarchicalNavigation=true])
+		in
+		    Source
+	lineageTag: 29c045c9-3f8e-4616-9a30-6239a3a47aa0
+
+	annotation PBI_IncludeFutureArtifacts = False
+

@@ -30,17 +30,60 @@
 
 # CELL ********************
 
+# Common imports
 import time
 import logging
 from datetime import datetime
 from dataclasses import dataclass, asdict
 import psutil
 import notebookutils
+import polars as pl
 
+# Imports specific to duckdb version of notebook
+import duckdb
+import polars as pl
+from deltalake import write_deltalake  # Unfortunately duckdb does not yet support writing to Azure, so we need write_deltalake to address that requirement
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+logger = logging.getLogger(name="duckdb_benchmark_notebook")
+logger.setLevel(logging.INFO)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+# Pre-requisities are to create a Fabric Workspace with a lakehouse, putting names here:
 WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
 LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
+
+# Path where raw data will be downloaded to
 RAW_DATA_RELATIVE_PATH = "land_registry"
 
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+# Common code used to set up all notebooks
+
+# Helper function to create base ABFSS path based on workspace and lakehouse name
 def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
     """Construct the base ABFSS path for a given workspace and lakehouse."""
     # Because it is a URL, replace spaces with %20
@@ -48,16 +91,15 @@ def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
     lakehouse_name = lakehouse_name.replace(" ", "%20")
     return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
 
+# Contruct base path
+source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}"
+
+# Helper function to create storage options that enable data tools to authenticate and interact with onelake storage
 def create_storage_options() -> dict:
     return {
         "bearer_token": notebookutils.credentials.getToken('storage'),
         "use_fabric_endpoint": "true"
     }
-
-# Imports specific to duckdb version of notebook
-import duckdb
-import polars as pl
-from deltalake import write_deltalake  # Unfortunately duckdb does not yet support writing to Azure, so we need write_deltalake to address that requirement
 
 # Data class to store benchmark metrics at key points during notebook process 
 @dataclass
@@ -103,6 +145,7 @@ class BenchmarkManager:
         records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
         return records_to_export
 
+
 # METADATA ********************
 
 # META {
@@ -112,8 +155,29 @@ class BenchmarkManager:
 
 # CELL ********************
 
-logger = logging.getLogger(name="duckdb_benchmark_notebook")
-logger.setLevel(logging.INFO)
+run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# Contruct source path for raw data
+source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
+
+# Construct base path for lakehouse schema
+schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/duckdb_benchmark_{run_timestamp}"
+
+# Now construct paths to tables in that schema
+target_path_prices = f"{schema_path}/prices"
+target_path_locations = f"{schema_path}/locations"
+target_path_dates = f"{schema_path}/dates"
+
+# Create storage options
+storage_options = create_storage_options()
+
+# Set up benchmark manager
+benchmark_manager = BenchmarkManager(
+    workload_name="DuckDB Benchmark",
+    run_timestamp=run_timestamp,
+    export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
+    storage_options=storage_options
+)
 
 # METADATA ********************
 
@@ -152,39 +216,6 @@ con.execute("INSTALL delta;")
 con.execute("LOAD delta;")
 con.execute("INSTALL azure")
 con.execute("LOAD azure;")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-# Contruct source path for raw data
-source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
-
-# Construct base path for lakehouse schema
-schema_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/duckdb_benchmark_{run_timestamp}"
-
-# Now construct paths to tables in that schema
-target_path_prices = f"{schema_path}/prices"
-target_path_locations = f"{schema_path}/locations"
-target_path_dates = f"{schema_path}/dates"
-
-# Create storage options
-storage_options = create_storage_options()
-
-# Set up benchmark manager
-benchmark_manager = BenchmarkManager(
-    workload_name="DuckDB Benchmark",
-    run_timestamp=run_timestamp,
-    export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
-    storage_options=storage_options
-)
 
 # METADATA ********************
 
@@ -273,7 +304,7 @@ benchmark_manager.capture_benchmark("ingest")
 # - Convert date_of_transfer to date type
 
 con.execute("""
-    CREATE OR REPLACE VIEW price_paid_data AS
+    CREATE OR REPLACE TABLE price_paid_data AS
     SELECT
         transaction_unique_identifier,
         price,
@@ -472,7 +503,7 @@ benchmark_manager.capture_benchmark("create_locations")
 
 # MARKDOWN ********************
 
-# ## Writing to OneLake Tables (managed tabular storage)
+# ## Writing to Delta Tables
 # 
 # At time of wiritng DuckDB does not support writing directly to Azure Blob Storage in Delta Lake format.
 # 
@@ -487,9 +518,8 @@ benchmark_manager.capture_benchmark("create_locations")
 logger.info(f"Writing prices data to Parquet: {target_path_prices}")
 write_deltalake(
     target_path_prices,
-    con.execute("SELECT * FROM prices").arrow(),
-    mode='overwrite',
-    schema_mode='merge',
+    con.execute("SELECT * FROM prices").fetch_record_batch(),
+    mode='overwrite', 
     engine='rust',
     storage_options=storage_options
 )
@@ -523,7 +553,6 @@ write_deltalake(
     target_path_locations,
     con.execute("SELECT * FROM locations").arrow(),
     mode='overwrite',
-    schema_mode='merge',
     engine='rust',
     storage_options=storage_options
 )
@@ -557,7 +586,6 @@ write_deltalake(
     target_path_dates,
     con.execute("SELECT * FROM dates").arrow(),
     mode='overwrite',
-    schema_mode='merge',
     engine='rust',
     storage_options=storage_options
 )
@@ -737,6 +765,18 @@ benchmark_results
 
 elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+notebookutils.fs.rm(schema_path, recurse=True)
+logger.info(f"Cleaned up lakehouse by everything under {schema_path}")
 
 # METADATA ********************
 

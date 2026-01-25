@@ -27,15 +27,19 @@
 
 # CELL ********************
 
-from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType
+# Common imports
 import time
 import logging
 from datetime import datetime
 from dataclasses import dataclass, asdict
 import psutil
 import notebookutils
-import polars as pl
+# import polars as pl
+
+# Imports unique to PySpark version of notebook
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType
+from pyspark.sql import Window
 
 # METADATA ********************
 
@@ -128,14 +132,19 @@ class BenchmarkManager:
         )
     
     def export_results(self):
-        records_to_export = pl.DataFrame([asdict(benchmark) for benchmark in self.benchmarks])
+        records_to_export = spark.createDataFrame([asdict(benchmark) for benchmark in self.benchmarks])
+        
+        # Define window for ordering by stage_time
+        window_spec = Window.orderBy("stage_time")
+        
         records_to_export = (
             records_to_export
-            .sort("stage_time", descending=False)
-            .with_row_index("order", offset=1)
-            .with_columns((pl.col("stage_time") - pl.col("stage_time").shift(1)).alias("stage_time_delta"))
+            .orderBy("stage_time")
+            .withColumn("order", F.row_number().over(window_spec))
+            .withColumn("stage_time_delta", F.col("stage_time") - F.lag("stage_time", 1).over(window_spec))
         )
-        records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
+        
+        records_to_export.write.format("delta").mode("append").save(self.export_abfss_path)
         return records_to_export
 
 # METADATA ********************
@@ -483,55 +492,7 @@ benchmark_manager.capture_benchmark("create_locations")
 # MARKDOWN ********************
 
 # ## Writing to Delta Tables
-# 
-# It is common practice to write out a PySpark DataFrame to a Delta table in the Tables area of your Lakehouse.
-# 
-# There are various write modes which are available:
-# 
-# Overwrite entire table:
-# 
-# ```python
-# df.write.format("delta").mode("overwrite").save(path)
-# ```
-# 
-# Append to existing table:
-# 
-# ```python
-# df.write.format("delta").mode("append").save(path)
-# ```
-# 
-# Merge (upsert) - use DeltaTable API:
-# 
-# ```python
-# from delta.tables import DeltaTable
-# 
-# delta_table = DeltaTable.forPath(spark, path)
-# (
-#     delta_table.alias("target")
-#     .merge(
-#         df.alias("source"),
-#         "source.id = target.id"
-#     )
-#     .whenMatchedUpdateAll()
-#     .whenNotMatchedInsertAll()
-#     .execute()
-# )
-# ```
 
-# MARKDOWN ********************
-
-# ### Handling Timestamps
-# 
-# A common gotcha when writing Delta tables is timezone handling. Fabric's SQL endpoint expects timestamps with timezone information.
-# 
-# We can address this by converting to UTC timestamp, for example:
-# 
-# ```python
-# df = df.withColumn(
-#     "datetime_of_order",
-#     F.to_utc_timestamp(F.col("datetime_of_order"), "UTC")
-# )
-# ```
 
 # MARKDOWN ********************
 
@@ -773,7 +734,7 @@ benchmark_results = benchmark_manager.export_results()
 
 # CELL ********************
 
-benchmark_results
+benchmark_results.show()
 
 # METADATA ********************
 
@@ -784,8 +745,22 @@ benchmark_results
 
 # CELL ********************
 
-elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
+elapsed = benchmark_results.select(
+    (F.max("stage_time") - F.min("stage_time")).alias("elapsed")
+).collect()[0]["elapsed"]
 logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+notebookutils.fs.rm(schema_path, recurse=True)
+logger.info(f"Cleaned up lakehouse by everything under {schema_path}")
 
 # METADATA ********************
 
