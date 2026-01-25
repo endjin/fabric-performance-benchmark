@@ -21,12 +21,45 @@
 
 # CELL ********************
 
-# Common code used to set up all notebooks
 import notebookutils
+import requests
+import fsspec
+
+import logging
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
 
 WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
 LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
 RAW_DATA_RELATIVE_PATH = "land_registry"
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
 
 def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
     """Construct the base ABFSS path for a given workspace and lakehouse."""
@@ -53,14 +86,6 @@ storage_options = create_storage_options()
 # META }
 
 # CELL ********************
-
-import requests
-import fsspec
-
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
 
 class LandRegstryImporter:
 
@@ -123,6 +148,29 @@ land_registry_importer = LandRegstryImporter(
 # CELL ********************
 
 land_registry_importer.download_land_registry_data()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+files = notebookutils.fs.ls(source_path)
+total_file_size = sum([file.size for file in files]) / (1024 * 1024 * 1024)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+logger.info(f"Downloaded {len(files)} files, total size {total_file_size:.2f}GB")
 
 # METADATA ********************
 
