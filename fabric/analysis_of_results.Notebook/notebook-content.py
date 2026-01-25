@@ -12,17 +12,6 @@
 
 # CELL ********************
 
-%pip install seaborn
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
 import polars as pl
 
 # METADATA ********************
@@ -73,7 +62,7 @@ def create_storage_options() -> dict:
 
 # CELL ********************
 
-benchmarks = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks"
+benchmarks_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks"
 
 # METADATA ********************
 
@@ -96,7 +85,7 @@ storage_options = create_storage_options()
 # CELL ********************
 
 # Load prices from and filter them to exclude "Other" property types
-benchmarks = pl.read_delta(benchmarks, storage_options=storage_options)
+benchmarks = pl.read_delta(benchmarks_path, storage_options=storage_options)
 
 # METADATA ********************
 
@@ -140,27 +129,25 @@ benchmarks.schema
 
 # CELL ********************
 
-# ATTENTION: AI-generated code can include errors or operations you didn't intend. Review the code in this cell carefully before running it.
-
-import plotly.express as px
-
-# Assuming 'benchmarks' dataframe is already in your notebook session
-fig = px.box(
-    (
-        benchmarks
-        .select(["workload_name", "stage_name", "stage_time_delta"])
-        .filter(
-            (pl.col("stage_name") != "start") &
-            (pl.col("stage_name").is_in(["ingest", "create_prices", "join_and_summarise"]))
-            )
-    ),
-    x="stage_name",
-    y="stage_time_delta",
-    color="workload_name",
-    points="all",  # Overlay individual data points
-    title="Stage Time by Stage Name and Workload Name"
+order_of_stages = pl.DataFrame(
+    {
+        "stage_name": [
+            'start',
+            'ingest',
+            'transform',
+            'create_prices',
+            'create_dates',
+            'create_locations',
+            'write_prices',
+            'write_locations',
+            'write_dates',
+            'read_prices',
+            'read_dates',
+            'join_and_summarise',
+        ],
+        "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
 )
-fig.show()
 
 # METADATA ********************
 
@@ -171,49 +158,48 @@ fig.show()
 
 # CELL ********************
 
-# ATTENTION: AI-generated code can include errors or operations you didn't intend. Review the code in this cell carefully before running it.
+order_of_stages
 
-import matplotlib.pyplot as plt
-import seaborn as sns
+# METADATA ********************
 
-# Prepare data: filter and convert to pandas
-selected_stages = ["ingest", "create_prices", "join_and_summarise"]
-pdf = (
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmarks = benchmarks.drop("order").join(order_of_stages, on="stage_name")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmarks
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+analytics = (
     benchmarks
-    .select(["workload_name", "stage_name", "stage_time_delta"])
-    .filter(
-        (pl.col("stage_name") != "start")
-        # &
-        # (pl.col("stage_name").is_in(selected_stages))
-    )
-    .to_pandas()
+    .filter(pl.col("stage_name") != "start")
+    .join(order_of_stages, on="stage_name")
+    .group_by(["workload_name", "stage_name", "order"])
+    .agg(pl.col("stage_time_delta").median().alias("median_time"))
+    .pivot(values="median_time", on="workload_name", index=["stage_name", "order"])
+    .sort("order", descending=False)
 )
-
-plt.figure(figsize=(10,6))
-sns.boxplot(
-    data=pdf, 
-    x="stage_name", 
-    y="stage_time_delta", 
-    hue="workload_name", 
-    showfliers=True,
-    palette="Set2"
-)
-sns.stripplot(
-    data=pdf, 
-    x="stage_name", 
-    y="stage_time_delta", 
-    hue="workload_name", 
-    dodge=True,
-    alpha=0.4,
-    palette="Set2"
-)
-
-plt.title("Stage Time Delta by Stage Name and Workload Name")
-plt.ylabel("stage_time_delta")
-plt.xlabel("stage_name")
-plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title="workload_name")
-plt.tight_layout()
-plt.show()
 
 # METADATA ********************
 
@@ -224,6 +210,37 @@ plt.show()
 
 # CELL ********************
 
+analytics.head(30)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+summary = (
+    benchmarks
+    .filter(pl.col("stage_name") != "start")
+    .group_by(["workload_name", "stage_name"])
+    .agg(pl.col("stage_time_delta").median().alias("median_time"))
+    .group_by("workload_name")
+    .agg(pl.col("median_time").sum().alias("total_median_time"))
+    .sort("total_median_time", descending=False)
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+summary
 
 # METADATA ********************
 
