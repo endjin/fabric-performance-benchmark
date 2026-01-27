@@ -8,6 +8,18 @@
 # META   }
 # META }
 
+# CELL ********************
+
+platform = "Fabric PySpark Notebook"
+configuration = "Medium"
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
 # MARKDOWN ********************
 
 # # Pyspark Benchmark
@@ -101,6 +113,8 @@ def create_storage_options() -> dict:
 # Data class to store benchmark metrics at key points during notebook process 
 @dataclass
 class Benchmark:
+    platform: str
+    configuration: str
     workload_name: str
     run_timestamp: str
     stage_name: str
@@ -113,15 +127,19 @@ class BenchmarkManager:
 
     benchmarks = []
 
-    def __init__(self, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
-        self.workload_name=workload_name
-        self.run_timestamp=run_timestamp
-        self.export_abfss_path=export_abfss_path
-        self.storage_options=storage_options
+    def __init__(self, platform: str, configuration:str, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
+        self.platform = platform
+        self.configuration = configuration
+        self.workload_name = workload_name
+        self.run_timestamp = run_timestamp
+        self.export_abfss_path = export_abfss_path
+        self.storage_options = storage_options
     
     def capture_benchmark(self, stage_name):
         self.benchmarks.append(
             Benchmark(
+                platform=self.platform,
+                configuration=self.configuration,
                 workload_name=self.workload_name,
                 run_timestamp=self.run_timestamp,
                 stage_name=stage_name,
@@ -174,6 +192,8 @@ storage_options = create_storage_options()
 
 # Set up benchmark manager
 benchmark_manager = BenchmarkManager(
+    platform = platform,
+    configuration = configuration,
     workload_name="PySpark Benchmark",
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
@@ -200,7 +220,11 @@ benchmark_manager.capture_benchmark("start")
 
 # MARKDOWN ********************
 
-# ## Ingest Raw Data
+# ## Phase 1 - Ingest and Transform Raw Data
+
+# MARKDOWN ********************
+
+# ### Ingest Raw Data
 
 # CELL ********************
 
@@ -340,6 +364,50 @@ price_paid_data = (
 
 # CELL ********************
 
+# Select only the columns we want to use and therefore cache
+price_paid_data = (
+    price_paid_data
+    .select(
+        [
+            "price",
+            "date_of_transfer",
+            "postcode",
+            "postcode_area",
+            "property_type",
+            "old_new",
+            "town_city",
+            "district",
+            "county",
+        ]
+    )
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ### Cache data
+# 
+# Cache the transformed data to optimise downstream data processing.
+
+# CELL ********************
+
+price_paid_data_cached = price_paid_data.cache()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 benchmark_manager.capture_benchmark("transform")
 
 # METADATA ********************
@@ -351,14 +419,18 @@ benchmark_manager.capture_benchmark("transform")
 
 # MARKDOWN ********************
 
-# ### Create fact table
+# ## Phase 2 - Create and write dimensional model
+
+# MARKDOWN ********************
+
+# ### Create and write Prices fact table
 # 
 # Select the core columns we want to use in the core fact table.
 
 # CELL ********************
 
 # Select relevant columns for downstream analysis
-prices = price_paid_data.select(
+prices = price_paid_data_cached.select(
     "price",
     "date_of_transfer",
     "postcode_area",
@@ -376,7 +448,20 @@ prices = price_paid_data.select(
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_prices")
+import os
+logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+prices.write.mode("overwrite").format("delta").save(target_path_prices)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_prices")
 
 # METADATA ********************
 
@@ -395,7 +480,7 @@ benchmark_manager.capture_benchmark("create_prices")
 
 # CELL ********************
 
-date_stats = price_paid_data.agg(
+date_stats = price_paid_data_cached.agg(
     F.min("date_of_transfer").alias("min_date"),
     F.max("date_of_transfer").alias("max_date")
 ).collect()[0]
@@ -440,7 +525,19 @@ dates = (
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_dates")
+logger.info(f"Writing dates data to Parquet: {target_path_dates}")
+dates.write.mode("overwrite").format("delta").save(target_path_dates)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_dates")
 
 # METADATA ********************
 
@@ -451,7 +548,7 @@ benchmark_manager.capture_benchmark("create_dates")
 
 # MARKDOWN ********************
 
-# ### Create location dimension
+# ### Create and write Locations dimension
 # 
 # Assumption is there is a hierarchy in descreasing order of granularity:
 # 
@@ -462,7 +559,7 @@ benchmark_manager.capture_benchmark("create_dates")
 # CELL ********************
 
 locations = (
-    price_paid_data
+    price_paid_data_cached
     .select(
         "county",
         "district",
@@ -477,54 +574,6 @@ locations = (
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("create_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
-# ## Writing to Delta Tables
-
-
-# MARKDOWN ********************
-
-# ### Write Prices
-
-# CELL ********************
-
-import os
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
-prices.write.mode("overwrite").format("delta").save(target_path_prices)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_prices")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
-# ### Write Locations
 
 # CELL ********************
 
@@ -551,34 +600,7 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # MARKDOWN ********************
 
-# ### Write Dates
-
-# CELL ********************
-
-logger.info(f"Writing dates data to Parquet: {target_path_dates}")
-dates.write.mode("overwrite").format("delta").save(target_path_dates)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_dates")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
-# ## Reading from DeltaLake and generate summary
+# ## Phase 3 - Read and Summarise
 # 
 # Spark uses lazy evaluation by default, so transformations are not executed until an action is triggered.
 # 

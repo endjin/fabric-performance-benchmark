@@ -1,11 +1,12 @@
 table benchmarks
-	lineageTag: 45b7f556-b410-42a1-a3aa-08ec1f161908
+	lineageTag: e693c8fb-e0c0-4130-9d83-a8b0cbf19f9b
 	sourceLineageTag: [benchmark_repository].[benchmarks]
 
 	column order
 		dataType: int64
 		formatString: 0
-		lineageTag: 4ebf61aa-919e-4e61-baac-80ce4e79603e
+		sourceProviderType: int
+		lineageTag: 46460579-b178-4115-a455-95c07b0ca5fc
 		sourceLineageTag: order
 		summarizeBy: sum
 		sourceColumn: order
@@ -14,7 +15,8 @@ table benchmarks
 
 	column workload_name
 		dataType: string
-		lineageTag: 6d30bc7c-2d27-427c-87c4-7fad89ff21b9
+		sourceProviderType: varchar(8000)
+		lineageTag: 59b4ea00-f3c4-4cca-a5b9-142fa9a3eb80
 		sourceLineageTag: workload_name
 		summarizeBy: none
 		sourceColumn: workload_name
@@ -23,7 +25,8 @@ table benchmarks
 
 	column run_timestamp
 		dataType: string
-		lineageTag: 89b2707e-6230-4ec6-9b10-eefabdb237e7
+		sourceProviderType: varchar(8000)
+		lineageTag: d3865c86-a56d-4651-87f3-4e191903f0e3
 		sourceLineageTag: run_timestamp
 		summarizeBy: none
 		sourceColumn: run_timestamp
@@ -32,7 +35,8 @@ table benchmarks
 
 	column stage_name
 		dataType: string
-		lineageTag: 7cdc6ae3-b417-4274-b7ff-9d2cb36e1517
+		sourceProviderType: varchar(8000)
+		lineageTag: 77f0c008-b535-40c5-8438-4fe48136aef8
 		sourceLineageTag: stage_name
 		summarizeBy: none
 		sourceColumn: stage_name
@@ -41,7 +45,8 @@ table benchmarks
 
 	column stage_time
 		dataType: double
-		lineageTag: dee794da-5947-49a8-a860-23451c587a87
+		sourceProviderType: float
+		lineageTag: 3fc6a29b-487b-48b0-835d-901c42e7a6d4
 		sourceLineageTag: stage_time
 		summarizeBy: sum
 		sourceColumn: stage_time
@@ -52,7 +57,8 @@ table benchmarks
 
 	column cpu
 		dataType: double
-		lineageTag: 9d3c5b07-152c-4b17-85a7-6a3fb58ac923
+		sourceProviderType: float
+		lineageTag: 20e1830b-baf3-4542-9dc6-97833d4026fc
 		sourceLineageTag: cpu
 		summarizeBy: sum
 		sourceColumn: cpu
@@ -63,7 +69,8 @@ table benchmarks
 
 	column memory
 		dataType: double
-		lineageTag: b0e4db66-79fd-4ad9-9135-4ffaada3dcd8
+		sourceProviderType: float
+		lineageTag: be65e4db-344b-4c84-9afa-dde76e8a2ce1
 		sourceLineageTag: memory
 		summarizeBy: sum
 		sourceColumn: memory
@@ -74,7 +81,8 @@ table benchmarks
 
 	column stage_time_delta
 		dataType: double
-		lineageTag: 26c9ba6c-adb5-4a46-bf3a-9c23c96d2e7d
+		sourceProviderType: float
+		lineageTag: 00e37695-80aa-4a42-a077-f433f83b131e
 		sourceLineageTag: stage_time_delta
 		summarizeBy: sum
 		sourceColumn: stage_time_delta
@@ -83,10 +91,32 @@ table benchmarks
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	column platform
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 13256f72-6abd-4fc1-bcef-2030f5977738
+		sourceLineageTag: platform
+		summarizeBy: none
+		sourceColumn: platform
+
+		annotation SummarizationSetBy = Automatic
+
+	column configuration
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 154a7780-8fe8-4634-b247-248d5e38e075
+		sourceLineageTag: configuration
+		summarizeBy: none
+		sourceColumn: configuration
+
+		annotation SummarizationSetBy = Automatic
+
 	partition benchmarks = entity
 		mode: directLake
 		source
 			entityName: benchmarks
 			schemaName: benchmark_repository
-			expressionSource: 'DirectLake - fabric_performance_benchmark_lakehouse'
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
 

@@ -9,6 +9,30 @@
 # META   }
 # META }
 
+# CELL ********************
+
+# MAGIC %%configure -f
+# MAGIC {"vCores": 2}
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+platform = "Fabric Python Notebook"
+configuration = "2 vCores"
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # # Polars Benchmark
@@ -17,14 +41,15 @@
 # 
 # This data is made available for us under an [Open Government Licence](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 # 
-# We will run two processes:
+# After set up (Phase 0) - we will run three phases:
 # 
-# 1. Load raw data, clean it up, add new features and finally write it as a mini dimensional model (prices, locations, dates) to the lakehouse.
-# 1. Query two of the tables in the dimensional model, join them and summarise the data.
+# 1. Load raw data, clean it up, add new features
+# 1. Using the output of the phase above, create and write a 3 tables (prices, locations, dates) to the lakehouse.
+# 1. Run a query across two of the tables above by joining them and summarising the data.
 
 # MARKDOWN ********************
 
-# ## Set up
+# ## Phase 0 - Set up
 
 # CELL ********************
 
@@ -46,6 +71,20 @@ import polars as pl
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# MARKDOWN ********************
+
+# ### Common Code
+# 
+# The code in this section is common across all notebooks.
+# 
+# It is used to:
+# - Set the ABFSS paths for reading from / writing to lakehouse
+# - Set up the `storage_options` parameter
+# - Log benchmarks
+
+# MARKDOWN ********************
+
 
 # CELL ********************
 
@@ -100,6 +139,8 @@ def create_storage_options() -> dict:
 # Data class to store benchmark metrics at key points during notebook process 
 @dataclass
 class Benchmark:
+    platform: str
+    configuration: str
     workload_name: str
     run_timestamp: str
     stage_name: str
@@ -112,15 +153,19 @@ class BenchmarkManager:
 
     benchmarks = []
 
-    def __init__(self, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
-        self.workload_name=workload_name
-        self.run_timestamp=run_timestamp
-        self.export_abfss_path=export_abfss_path
-        self.storage_options=storage_options
+    def __init__(self, platform: str, configuration:str, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
+        self.platform = platform
+        self.configuration = configuration
+        self.workload_name = workload_name
+        self.run_timestamp = run_timestamp
+        self.export_abfss_path = export_abfss_path
+        self.storage_options = storage_options
     
     def capture_benchmark(self, stage_name):
         self.benchmarks.append(
             Benchmark(
+                platform=self.platform,
+                configuration=self.configuration,
                 workload_name=self.workload_name,
                 run_timestamp=self.run_timestamp,
                 stage_name=stage_name,
@@ -149,6 +194,12 @@ class BenchmarkManager:
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ### Configuration
+# 
+# Configuring the lakehouse paths and helper functions used throughout the notebook.
+
 # CELL ********************
 
 run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -169,6 +220,8 @@ storage_options = create_storage_options()
 
 # Set up benchmark manager
 benchmark_manager = BenchmarkManager(
+    platform=platform,
+    configuration=configuration,
     workload_name="Polars Benchmark",
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
@@ -330,6 +383,32 @@ price_paid_data = (
         pl.col("date_of_transfer")
         .dt.date()
         .alias("date_of_transfer")
+    )
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+price_paid_data = (
+    price_paid_data
+    .select(
+        [
+            "price",
+            "date_of_transfer",
+            "postcode",
+            "postcode_area",
+            "property_type",
+            "old_new",
+            "town_city",
+            "district",
+            "county",
+        ]
     )
 )
 
@@ -547,7 +626,7 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # MARKDOWN ********************
 
-# ## Read and Summarise
+# ## Phase 3 - Read and Summarise
 # 
 # When we are reading delta files, we can use the Lazy execution framework to maximise scale and performance.
 # 

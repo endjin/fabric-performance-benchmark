@@ -135,9 +135,6 @@ order_of_stages = pl.DataFrame(
             'start',
             'ingest',
             'transform',
-            'create_prices',
-            'create_dates',
-            'create_locations',
             'write_prices',
             'write_locations',
             'write_dates',
@@ -145,7 +142,9 @@ order_of_stages = pl.DataFrame(
             'read_dates',
             'join_and_summarise',
         ],
-        "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        "stage_order": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        "phase": [None, "ingest_and_transform", "ingest_and_transform", "create_and_write", "create_and_write", "create_and_write", "read_and_summarise", "read_and_summarise", "read_and_summarise"],
+        "phase_order": [None, 1, 1, 2, 2, 2, 3, 3, 3]
     }
 )
 
@@ -195,10 +194,10 @@ analytics = (
     benchmarks
     .filter(pl.col("stage_name") != "start")
     .join(order_of_stages, on="stage_name")
-    .group_by(["workload_name", "stage_name", "order"])
+    .group_by(["workload_name", "stage_name", "stage_order"])
     .agg(pl.col("stage_time_delta").median().alias("median_time"))
-    .pivot(values="median_time", on="workload_name", index=["stage_name", "order"])
-    .sort("order", descending=False)
+    .pivot(values="median_time", on="workload_name", index=["stage_name", "stage_order"])
+    .sort("stage_order", descending=False)
 )
 
 # METADATA ********************
@@ -210,7 +209,7 @@ analytics = (
 
 # CELL ********************
 
-analytics.head(30)
+analytics
 
 # METADATA ********************
 

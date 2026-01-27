@@ -9,24 +9,58 @@
 # META   }
 # META }
 
+# PARAMETERS CELL ********************
+
+# MAGIC %%configure -f
+# MAGIC {"vCores": 2}
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+platform = "Fabric Python Notebook"
+configuration = "2 vCores"
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
-# # DuckDB Benchmark
+# # Polars Benchmark
 # 
-# This notebook runs an representative end to end use case over data sourced from the [UK Land Registry House Price Data open data repository](https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads).
+# This notebook runs a representative end to end use case over data sourced from the [UK Land Registry House Price Data open data repository](https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads).
 # 
 # This data is made available for us under an [Open Government Licence](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 # 
-# We will run two processes:
+# After set up (Phase 0) - we will run three phases:
 # 
-# 1. Load raw data, clean it up, add new features and finally write it as a mini dimensional model to lakehouse.
-# 1. Query two of the tables in the dimensional model, join them and summarise the data.
-# 
-# DuckDB is an in-process SQL OLAP database that excels at analytical queries. It provides a familiar SQL interface while delivering excellent performance on single-node workloads.
+# 1. Load raw data, clean it up, add new features
+# 1. Using the output of the phase above, create and write a 3 tables (prices, locations, dates) to the lakehouse.
+# 1. Run a query across two of the tables above by joining them and summarising the data.
 
 # MARKDOWN ********************
 
-# ## Set up
+# ## Phase 0 - Set up
+
+# MARKDOWN ********************
+
+# ### Common Code
+# 
+# The code in this section is common across all notebooks.
+# 
+# It is used to:
+# - Set the ABFSS paths for reading from / writing to lakehouse
+# - Set up the `storage_options` parameter
+# - Log benchmarks
 
 # CELL ********************
 
@@ -104,6 +138,8 @@ def create_storage_options() -> dict:
 # Data class to store benchmark metrics at key points during notebook process 
 @dataclass
 class Benchmark:
+    platform: str
+    configuration: str
     workload_name: str
     run_timestamp: str
     stage_name: str
@@ -116,15 +152,19 @@ class BenchmarkManager:
 
     benchmarks = []
 
-    def __init__(self, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
-        self.workload_name=workload_name
-        self.run_timestamp=run_timestamp
-        self.export_abfss_path=export_abfss_path
-        self.storage_options=storage_options
+    def __init__(self, platform: str, configuration:str, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
+        self.platform = platform
+        self.configuration = configuration
+        self.workload_name = workload_name
+        self.run_timestamp = run_timestamp
+        self.export_abfss_path = export_abfss_path
+        self.storage_options = storage_options
     
     def capture_benchmark(self, stage_name):
         self.benchmarks.append(
             Benchmark(
+                platform=self.platform,
+                configuration=self.configuration,
                 workload_name=self.workload_name,
                 run_timestamp=self.run_timestamp,
                 stage_name=stage_name,
@@ -153,6 +193,12 @@ class BenchmarkManager:
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ### Configuration
+# 
+# Configuring the lakehouse paths and helper functions used throughout the notebook.
+
 # CELL ********************
 
 run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -173,6 +219,8 @@ storage_options = create_storage_options()
 
 # Set up benchmark manager
 benchmark_manager = BenchmarkManager(
+    platform = platform,
+    configuration = configuration,
     workload_name="DuckDB Benchmark",
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
@@ -237,7 +285,11 @@ benchmark_manager.capture_benchmark("start")
 
 # MARKDOWN ********************
 
-# ## Ingest Raw Data
+# ## Phase 1 - Ingest and Transform Raw Data
+
+# MARKDOWN ********************
+
+# ### Ingest Raw Data
 
 # CELL ********************
 
@@ -291,7 +343,7 @@ benchmark_manager.capture_benchmark("ingest")
 
 # MARKDOWN ********************
 
-# ## Data Transformation
+# ### Data Transformation
 # 
 # With DuckDB, we use SQL to transform our data. Views allow us to build up transformations lazily - the actual computation happens when we query the final result.
 
@@ -323,16 +375,9 @@ con.execute("""
             WHEN 'N' THEN 'Old'
             ELSE old_new
         END AS old_new,
-        duration,
-        paon,
-        saon,
-        street,
-        locality,
         town_city,
         district,
         county,
-        ppd_category_type,
-        record_status,
         regexp_extract(postcode, '^([A-Z]{1,2})', 1) AS postcode_area
     FROM price_paid_raw
 """)
@@ -357,7 +402,11 @@ benchmark_manager.capture_benchmark("transform")
 
 # MARKDOWN ********************
 
-# ### Create fact table
+# ## Phase 2 - Create and write dimensional model
+
+# MARKDOWN ********************
+
+# ### Create and write Prices fact table
 # 
 # Select the core columns we want to use in the core fact table.
 
@@ -385,7 +434,25 @@ con.execute("""
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_prices")
+logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+write_deltalake(
+    target_path_prices,
+    con.execute("SELECT * FROM prices").fetch_record_batch(),
+    mode='overwrite', 
+    engine='rust',
+    storage_options=storage_options
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_prices")
 
 # METADATA ********************
 
@@ -396,7 +463,7 @@ benchmark_manager.capture_benchmark("create_prices")
 
 # MARKDOWN ********************
 
-# ### Create date dimension
+# ### Create and write Dates dimension
 # 
 # Use min and max dates to build date dimension table.
 # 
@@ -452,7 +519,25 @@ con.execute(f"""
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_dates")
+logger.info(f"Writing dates data to Parquet: {target_path_dates}")
+write_deltalake(
+    target_path_dates,
+    con.execute("SELECT * FROM dates").arrow(),
+    mode='overwrite',
+    engine='rust',
+    storage_options=storage_options
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_dates")
 
 # METADATA ********************
 
@@ -463,7 +548,7 @@ benchmark_manager.capture_benchmark("create_dates")
 
 # MARKDOWN ********************
 
-# ### Create location dimension
+# ### Create and write Locations dimension
 # 
 # Assumption is there is a hierarchy in decreasing order of granularity:
 # 
@@ -489,62 +574,6 @@ con.execute("""
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("create_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Writing to Delta Tables
-# 
-# At time of wiritng DuckDB does not support writing directly to Azure Blob Storage in Delta Lake format.
-# 
-# So we will use Apache Arrow as intermediate format to write out to Delta format.
-
-# MARKDOWN ********************
-
-# ### Write Prices
-
-# CELL ********************
-
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
-write_deltalake(
-    target_path_prices,
-    con.execute("SELECT * FROM prices").fetch_record_batch(),
-    mode='overwrite', 
-    engine='rust',
-    storage_options=storage_options
-)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_prices")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ### Write Locations
 
 # CELL ********************
 
@@ -577,40 +606,7 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # MARKDOWN ********************
 
-# ### Write Dates
-
-# CELL ********************
-
-logger.info(f"Writing dates data to Parquet: {target_path_dates}")
-write_deltalake(
-    target_path_dates,
-    con.execute("SELECT * FROM dates").arrow(),
-    mode='overwrite',
-    engine='rust',
-    storage_options=storage_options
-)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_dates")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Reading from Delta Lake and generate summary
+# ## Phase 3 - Read and Summarise
 # 
 # DuckDB can read Delta tables directly using the `delta_scan` function.
 # 
@@ -690,7 +686,7 @@ benchmark_manager.capture_benchmark("read_dates")
 # CELL ********************
 
 # Join prices with dates and create monthly summary in one query
-# This demonstrates DuckDB's ability to compose complex analytical queries
+# This demonstrates DuckDB's ability to compose complex queries
 monthly_summary = con.execute("""
     SELECT
         d.month_tag,

@@ -9,10 +9,22 @@
 # META   }
 # META }
 
+# PARAMETERS CELL ********************
+
+# MAGIC %%configure -f
+# MAGIC {"vCores": 2}
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # CELL ********************
 
-# %%configure -f
-# {"vCores": 4}
+platform = "Fabric Python Notebook"
+configuration = "2 vCores"
 
 # METADATA ********************
 
@@ -113,6 +125,8 @@ def create_storage_options() -> dict:
 # Data class to store benchmark metrics at key points during notebook process 
 @dataclass
 class Benchmark:
+    platform: str
+    configuration: str
     workload_name: str
     run_timestamp: str
     stage_name: str
@@ -125,15 +139,19 @@ class BenchmarkManager:
 
     benchmarks = []
 
-    def __init__(self, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
-        self.workload_name=workload_name
-        self.run_timestamp=run_timestamp
-        self.export_abfss_path=export_abfss_path
-        self.storage_options=storage_options
+    def __init__(self, platform: str, configuration:str, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
+        self.platform = platform
+        self.configuration = configuration
+        self.workload_name = workload_name
+        self.run_timestamp = run_timestamp
+        self.export_abfss_path = export_abfss_path
+        self.storage_options = storage_options
     
     def capture_benchmark(self, stage_name):
         self.benchmarks.append(
             Benchmark(
+                platform=self.platform,
+                configuration=self.configuration,
                 workload_name=self.workload_name,
                 run_timestamp=self.run_timestamp,
                 stage_name=stage_name,
@@ -182,6 +200,8 @@ storage_options = create_storage_options()
 
 # Set up benchmark manager
 benchmark_manager = BenchmarkManager(
+    platform=platform,
+    configuration=configuration,
     workload_name="Pandas Benchmark",
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
@@ -298,17 +318,6 @@ for file_number, source_file in enumerate(source_files):
 
 logger.info(f"Loaded all source files into single dataframe.")
 
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("ingest")
 
 # METADATA ********************
 
@@ -602,9 +611,9 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # MARKDOWN ********************
 
-# ## Reading from DeltaLake and generate summary
+# ## Phase 3 - Read and Summarise
 # 
-# Let's illustrate this by generating some analytics in this notebook using the data we have just written to the lakehouse in Delta format.
+# Generate some analytics in this notebook using the data we have just written to the lakehouse in Delta format.
 
 # MARKDOWN ********************
 
@@ -680,17 +689,6 @@ benchmark_manager.capture_benchmark("read_dates")
 
 # ### Join and Summarise
 
-# CELL ********************
-
-benchmark_manager.capture_benchmark("read_dates")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
 # MARKDOWN ********************
 
 # ### Join and Summarise
@@ -705,17 +703,6 @@ prices = prices.merge(
     right_on="date",
     how="left"
 )
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-prices.info()
 
 # METADATA ********************
 
@@ -794,6 +781,7 @@ benchmark_results
 # CELL ********************
 
 elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
+logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
 
 # METADATA ********************
 
