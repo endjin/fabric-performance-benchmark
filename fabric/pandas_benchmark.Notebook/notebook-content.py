@@ -11,8 +11,8 @@
 
 # CELL ********************
 
-# MAGIC %%configure -f
-# MAGIC {"vCores": 8}
+# %%configure -f
+# {"vCores": 4}
 
 # METADATA ********************
 
@@ -208,7 +208,11 @@ benchmark_manager.capture_benchmark("start")
 
 # MARKDOWN ********************
 
-# ## Ingest Raw Data
+# ## Phase 1 - Ingest and Transform Raw Data
+
+# MARKDOWN ********************
+
+# ### Ingest Raw Data
 
 # CELL ********************
 
@@ -263,6 +267,17 @@ column_dtypes = {
     "record_status": str
 }
 
+columns_to_select = [
+    "price",
+    "date_of_transfer",
+    "postcode",
+    "property_type",
+    "old_new",
+    "town_city",
+    "district",
+    "county",
+]
+
 logger.info(f"Ingesting {len(source_files)} source files:")
 
 # Read and concatenate all CSV files
@@ -276,6 +291,7 @@ for file_number, source_file in enumerate(source_files):
         na_values=[""],
         names=column_names,
         dtype=column_dtypes,
+        usecols=columns_to_select,
         storage_options=storage_options,
     )
     price_paid_data = pd.concat([price_paid_data, df], ignore_index=True)
@@ -314,7 +330,7 @@ benchmark_manager.capture_benchmark("ingest")
 
 # MARKDOWN ********************
 
-# ## Data Transformation
+# ### Data Transformation
 # 
 # Now we have the DataFrame loaded, we can start to build up the transformations we want to apply:
 
@@ -404,20 +420,13 @@ benchmark_manager.capture_benchmark("transform")
 # META   "language_group": "jupyter_python"
 # META }
 
-# CELL ********************
+# MARKDOWN ********************
 
-benchmark_manager.capture_benchmark("transform")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
+# ## Phase 2 - Create and write dimensional model
 
 # MARKDOWN ********************
 
-# ### Create fact table
+# ### Create and write Prices table
 # 
 # Select the core columns we want to use in the core fact table.
 
@@ -442,7 +451,14 @@ prices = price_paid_data[[
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_prices")
+logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+write_deltalake(
+    target_path_prices,
+    prices,
+    mode='overwrite',
+    engine='rust',
+    storage_options=storage_options
+)
 
 # METADATA ********************
 
@@ -453,7 +469,7 @@ benchmark_manager.capture_benchmark("create_prices")
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_prices")
+benchmark_manager.capture_benchmark("write_prices")
 
 # METADATA ********************
 
@@ -464,7 +480,7 @@ benchmark_manager.capture_benchmark("create_prices")
 
 # MARKDOWN ********************
 
-# ### Create date dimension
+# ### Create and write Dates dimension
 # 
 # Use min and max dates to build date dimension table.
 
@@ -503,7 +519,14 @@ dates["date"] = dates["date"].dt.date
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_dates")
+logger.info(f"Writing dates data to Parquet: {target_path_dates}")
+write_deltalake(
+    target_path_dates,
+    dates,
+    mode='overwrite',
+    engine='rust',
+    storage_options=storage_options
+)
 
 # METADATA ********************
 
@@ -514,7 +537,7 @@ benchmark_manager.capture_benchmark("create_dates")
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_dates")
+benchmark_manager.capture_benchmark("write_dates")
 
 # METADATA ********************
 
@@ -525,7 +548,7 @@ benchmark_manager.capture_benchmark("create_dates")
 
 # MARKDOWN ********************
 
-# ### Create location dimension
+# ### Create and write Locations dimension
 # 
 # Assumption is there is a hierarchy in descreasing order of granularity:
 # 
@@ -547,71 +570,6 @@ locations = price_paid_data[[
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("create_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("create_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Writing to Delta Tables
-# 
-# It is common practice to write out a Pandas DataFrame to a Delta table in the Tables area of your Lakehouse.
-
-# MARKDOWN ********************
-
-# ### Write Prices
-
-# CELL ********************
-
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
-write_deltalake(
-    target_path_prices,
-    prices,
-    mode='overwrite',
-    engine='rust',
-    storage_options=storage_options
-)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_prices")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ### Write Locations
 
 # CELL ********************
 
@@ -644,61 +602,9 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # MARKDOWN ********************
 
-# ### Write Dates
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ### Write Dates
-
-# CELL ********************
-
-logger.info(f"Writing dates data to Parquet: {target_path_dates}")
-write_deltalake(
-    target_path_dates,
-    dates,
-    mode='overwrite',
-    engine='rust',
-    storage_options=storage_options
-)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_dates")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
 # ## Reading from DeltaLake and generate summary
 # 
 # Let's illustrate this by generating some analytics in this notebook using the data we have just written to the lakehouse in Delta format.
-
-# MARKDOWN ********************
-
-# ### Read Prices
 
 # MARKDOWN ********************
 
@@ -888,41 +794,6 @@ benchmark_results
 # CELL ********************
 
 elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
-benchmark_manager.capture_benchmark("join_and_summarise")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_results = benchmark_manager.export_results()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_results
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
-logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
 
 # METADATA ********************
 

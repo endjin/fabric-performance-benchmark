@@ -195,7 +195,11 @@ benchmark_manager.capture_benchmark("start")
 
 # MARKDOWN ********************
 
-# ## Ingest Raw Data
+# ## Phase 1 - Ingest and Transform Raw Data
+
+# MARKDOWN ********************
+
+# ### Ingest Data
 
 # CELL ********************
 
@@ -244,7 +248,7 @@ benchmark_manager.capture_benchmark("ingest")
 
 # MARKDOWN ********************
 
-# ## Data Transformation
+# ### Transformation
 # 
 # Now we can have a lazy frame in place, we can start to build up the transformations we want apply using Polars' composable expression API:
 
@@ -336,6 +340,24 @@ price_paid_data = (
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ### Cache
+# 
+# Here we use the `collect()` method to cache the transformed raw data so that downstream creation of Prices, Dates and Locations can leverage a single source of data in memory, rather than re-loading it multuple times from storage.
+
+# CELL ********************
+
+# Cache the transformed data for downstream usage
+price_paid_data_cached = price_paid_data.collect().lazy()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # CELL ********************
 
 benchmark_manager.capture_benchmark("transform")
@@ -349,21 +371,25 @@ benchmark_manager.capture_benchmark("transform")
 
 # MARKDOWN ********************
 
-# ### Create fact table
+# ## Phase 2 - Create and write dimensional model
+
+# MARKDOWN ********************
+
+# ### Create and write Prices table
 # 
-# Select the core columns we want to use in the core fact table.
+# Select the core columns we want to use in the core fact table and write these to the lakehouse.
 
 # CELL ********************
 
 # Select relevant columns for downstream analysis
-prices = price_paid_data.select([
+prices = price_paid_data_cached.select([
     "price",
     "date_of_transfer",
     "postcode_area",
     "town_city",
     "property_type",
     "old_new",
-]).collect()
+])
 
 # METADATA ********************
 
@@ -374,7 +400,19 @@ prices = price_paid_data.select([
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_prices")
+logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+prices.collect().write_delta(target_path_prices, mode="overwrite", storage_options=storage_options)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_prices")
 
 # METADATA ********************
 
@@ -385,16 +423,14 @@ benchmark_manager.capture_benchmark("create_prices")
 
 # MARKDOWN ********************
 
-# ### Create date dimension
+# ### Create and write Date dimension
 # 
 # Use min and max dates to build date dimension table.
-# 
-# At this stage we need to materialise the data.  But given we are operating over a single column, the operaiton will be optimised through **projection pushdown**.
 
 # CELL ********************
 
-min_date = prices.select(pl.col("date_of_transfer").min())[0,0]
-max_date = prices.select(pl.col("date_of_transfer").max())[0,0]
+min_date = price_paid_data_cached.select(pl.col("date_of_transfer").min()).collect()[0,0]
+max_date = price_paid_data_cached.select(pl.col("date_of_transfer").max()).collect()[0,0]
 min_date, max_date
 
 # METADATA ********************
@@ -434,124 +470,6 @@ dates = (
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("create_dates")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ### Create location dimension
-# 
-# Assumption is there is a hierarchy in descreasing order of granularity:
-# 
-# - County
-# - District
-# - Town or City
-
-# CELL ********************
-
-locations = (
-    price_paid_data
-    .select(
-        [
-            "county",
-            "district",
-            "town_city",
-        ]
-    )
-    .unique()
-).collect()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("create_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Writing to Delta Tables
-# 
-
-
-# MARKDOWN ********************
-
-# ### Write Prices
-
-# CELL ********************
-
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
-prices.write_delta(target_path_prices, mode="overwrite", storage_options=storage_options)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_prices")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ### Write Locations
-
-
-# CELL ********************
-
-logger.info(f"Writing locations data to Parquet: {target_path_locations}")
-locations.write_delta(target_path_locations, mode="overwrite", storage_options=storage_options)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-benchmark_manager.capture_benchmark("write_locations")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ### Write Dates
-
-# CELL ********************
-
 logger.info(f"Writing dates data to Parquet: {target_path_dates}")
 dates.write_delta(target_path_dates, mode="overwrite", storage_options=storage_options)
 
@@ -575,7 +493,61 @@ benchmark_manager.capture_benchmark("write_dates")
 
 # MARKDOWN ********************
 
-# ## Reading from DeltaLake and generate sumamry
+# ### Create and write Locations dimension
+# 
+# Assumption is there is a hierarchy in descreasing order of granularity:
+# 
+# - County
+# - District
+# - Town or City
+
+# CELL ********************
+
+locations = (
+    price_paid_data_cached
+    .select(
+        [
+            "county",
+            "district",
+            "town_city",
+        ]
+    )
+    .unique()
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+logger.info(f"Writing locations data to Parquet: {target_path_locations}")
+locations.collect().write_delta(target_path_locations, mode="overwrite", storage_options=storage_options)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("write_locations")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ## Read and Summarise
 # 
 # When we are reading delta files, we can use the Lazy execution framework to maximise scale and performance.
 # 
