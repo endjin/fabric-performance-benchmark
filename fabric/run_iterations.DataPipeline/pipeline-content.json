@@ -1,0 +1,102 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "iteration_array",
+          "value": {
+            "value": "@range(1, pipeline().parameters.iterations)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_iteration_array",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@variables('iteration_array')",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "v_cores": {
+                    "value": "@pipeline().parameters.v_cores",
+                    "type": "Expression"
+                  },
+                  "notebook_id": {
+                    "value": "@pipeline().parameters.notebook_id",
+                    "type": "Expression"
+                  },
+                  "notebook_name": {
+                    "value": "@pipeline().parameters.notebook_name",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "a1ab370b-29f3-b03f-4240-2c7cf0e2717b",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "acd3ccdd-38bd-4bcc-b3a1-ac6aae83cecb"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "run_notebook",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "for_each_run_notebook",
+        "description": "Run the notebook multiple times based on iterations defined at top level.",
+        "dependsOn": [
+          {
+            "activity": "set_iteration_array",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "iterations": {
+        "type": "int",
+        "defaultValue": 2
+      },
+      "v_cores": {
+        "type": "string",
+        "defaultValue": "2"
+      },
+      "notebook_id": {
+        "type": "string",
+        "defaultValue": "5204a490-7561-4d6a-a431-50e2511a08bb"
+      },
+      "notebook_name": {
+        "type": "string",
+        "defaultValue": "polars_benchmark"
+      }
+    },
+    "variables": {
+      "iteration_array": {
+        "type": "Array"
+      }
+    }
+  }
+}

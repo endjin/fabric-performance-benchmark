@@ -5,13 +5,16 @@
 # META {
 # META   "kernel_info": {
 # META     "name": "synapse_pyspark"
+# META   },
+# META   "dependencies": {
+# META     "environment": {}
 # META   }
 # META }
 
 # CELL ********************
 
 platform = "Fabric PySpark Notebook"
-configuration = "Medium"
+configuration = "Small"
 
 # METADATA ********************
 

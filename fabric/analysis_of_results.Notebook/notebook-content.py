@@ -64,6 +64,8 @@ def create_storage_options() -> dict:
 
 benchmarks_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks"
 
+stages_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/stages"
+
 # METADATA ********************
 
 # META {
@@ -168,7 +170,18 @@ order_of_stages
 
 # CELL ********************
 
-benchmarks = benchmarks.drop("order").join(order_of_stages, on="stage_name")
+order_of_stages.write_delta(stages_path, mode="overwrite", storage_options=storage_options)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmarks = benchmarks.join(order_of_stages, on="stage_name")
 
 # METADATA ********************
 

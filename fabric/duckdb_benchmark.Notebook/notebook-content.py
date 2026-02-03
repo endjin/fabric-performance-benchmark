@@ -9,10 +9,16 @@
 # META   }
 # META }
 
-# PARAMETERS CELL ********************
+# CELL ********************
 
 # MAGIC %%configure -f
-# MAGIC {"vCores": 2}
+# MAGIC { 
+# MAGIC     "vCores": 
+# MAGIC     { 
+# MAGIC         "parameterName": "v_cores", 
+# MAGIC         "defaultValue": 2 
+# MAGIC     }
+# MAGIC } 
 
 # METADATA ********************
 
@@ -21,10 +27,11 @@
 # META   "language_group": "jupyter_python"
 # META }
 
-# CELL ********************
+# PARAMETERS CELL ********************
 
-platform = "Fabric Python Notebook"
-configuration = "2 vCores"
+run_timestamp = None
+v_cores = 2
+notebook = ""
 
 # METADATA ********************
 
@@ -51,27 +58,16 @@ configuration = "2 vCores"
 
 # ## Phase 0 - Set up
 
-# MARKDOWN ********************
-
-# ### Common Code
-# 
-# The code in this section is common across all notebooks.
-# 
-# It is used to:
-# - Set the ABFSS paths for reading from / writing to lakehouse
-# - Set up the `storage_options` parameter
-# - Log benchmarks
-
 # CELL ********************
 
 # Common imports
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
 import psutil
+import json
 import notebookutils
-import polars as pl
 
 # Imports specific to duckdb version of notebook
 import duckdb
@@ -85,10 +81,37 @@ from deltalake import write_deltalake  # Unfortunately duckdb does not yet suppo
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ### Common Code
+# 
+# The code in this section is common across all notebooks.
+# 
+# It is used to:
+# - Set up logging
+# - Set constants for workspace and lakehouse names
+# - Set relative path for source data used as input
+# - Set the ABFSS paths for reading from / writing to lakehouse
+# - Set up the `storage_options` parameter
+# - Log benchmarks
+
 # CELL ********************
 
 logger = logging.getLogger(name="duckdb_benchmark_notebook")
 logger.setLevel(logging.INFO)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+if not run_timestamp:
+    run_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    logger.info(f"No timestamp set, using: {run_timestamp}")
 
 # METADATA ********************
 
@@ -125,9 +148,6 @@ def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
     lakehouse_name = lakehouse_name.replace(" ", "%20")
     return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
 
-# Contruct base path
-source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}"
-
 # Helper function to create storage options that enable data tools to authenticate and interact with onelake storage
 def create_storage_options() -> dict:
     return {
@@ -144,8 +164,11 @@ class Benchmark:
     run_timestamp: str
     stage_name: str
     stage_time: float
-    cpu: float
+    cpu_count:float
+    cpu_usage: float
     memory: float
+    memory_usage:float
+
 
 # Benchmark Manager class will help capture benchmarks consistently, then write them out to lakehouse at end of notebook
 class BenchmarkManager:
@@ -160,7 +183,11 @@ class BenchmarkManager:
         self.export_abfss_path = export_abfss_path
         self.storage_options = storage_options
     
-    def capture_benchmark(self, stage_name):
+    def capture_benchmark(self, stage_name, timestamp=None):
+
+        if timestamp is None:
+            timestamp = datetime.now()
+
         self.benchmarks.append(
             Benchmark(
                 platform=self.platform,
@@ -168,9 +195,11 @@ class BenchmarkManager:
                 workload_name=self.workload_name,
                 run_timestamp=self.run_timestamp,
                 stage_name=stage_name,
-                stage_time=time.perf_counter(),
-                cpu=psutil.cpu_percent(interval=None),
-                memory=psutil.virtual_memory().percent,
+                stage_time=timestamp,
+                cpu_count=psutil.cpu_count(),
+                cpu_usage=psutil.cpu_percent(interval=None),
+                memory=(psutil.virtual_memory().total / (1024 * 1024 * 1024)),
+                memory_usage=psutil.virtual_memory().percent,
             )
         )
     
@@ -180,7 +209,7 @@ class BenchmarkManager:
             records_to_export
             .sort("stage_time", descending=False)
             .with_row_index("order", offset=1)
-            .with_columns((pl.col("stage_time") - pl.col("stage_time").shift(1)).alias("stage_time_delta"))
+            .with_columns((pl.col("stage_time").diff().dt.total_milliseconds().alias("stage_time_delta") / 1000))
         )
         records_to_export.write_delta(self.export_abfss_path, mode="append", storage_options=self.storage_options)
         return records_to_export
@@ -201,8 +230,6 @@ class BenchmarkManager:
 
 # CELL ********************
 
-run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
 # Contruct source path for raw data
 source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
@@ -219,9 +246,9 @@ storage_options = create_storage_options()
 
 # Set up benchmark manager
 benchmark_manager = BenchmarkManager(
-    platform = platform,
-    configuration = configuration,
-    workload_name="DuckDB Benchmark",
+    platform="Fabric Python Notebook",
+    configuration=f"{v_cores} vCores",
+    workload_name=notebook,
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
     storage_options=storage_options
@@ -274,7 +301,19 @@ con.execute("LOAD azure;")
 
 # CELL ********************
 
-benchmark_manager.capture_benchmark("start")
+# Convert from string in formant "yyyyMMdd_HHmmss" to datetime
+benchmark_manager.capture_benchmark("start", timestamp=datetime.strptime(run_timestamp, '%Y%m%d_%H%M%S'))
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+benchmark_manager.capture_benchmark("setup")
 
 # METADATA ********************
 
@@ -760,7 +799,7 @@ benchmark_results
 # CELL ********************
 
 elapsed = benchmark_results["stage_time"].max() - benchmark_results["stage_time"].min()
-logger.info(f"Notebook completed in {elapsed:.2f} seconds.")
+logger.info(f"Notebook completed in {elapsed}.")
 
 # METADATA ********************
 

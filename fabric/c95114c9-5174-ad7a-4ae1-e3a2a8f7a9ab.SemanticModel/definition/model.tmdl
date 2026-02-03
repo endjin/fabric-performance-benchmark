@@ -11,5 +11,8 @@ annotation __PBI_TimeIntelligenceEnabled = 0
 
 annotation PBI_QueryOrder = ["DatabaseQuery"]
 
+annotation PBI_ProTooling = ["WebModelingEdit"]
+
 ref table benchmarks
+ref table stages
 

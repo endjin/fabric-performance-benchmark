@@ -1,0 +1,90 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "set_timestamp",
+        "type": "SetVariable",
+        "dependsOn": [],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "timestamp",
+          "value": {
+            "value": "@utcNow('yyyyMMdd_HHmmss')",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "run_benchmark_notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "set_timestamp",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().parameters.notebook_id",
+            "type": "Expression"
+          },
+          "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6",
+          "parameters": {
+            "v_cores": {
+              "value": {
+                "value": "@pipeline().parameters.v_cores",
+                "type": "Expression"
+              },
+              "type": "int"
+            },
+            "run_timestamp": {
+              "value": {
+                "value": "@variables('timestamp')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "notebook": {
+              "value": {
+                "value": "@pipeline().parameters.notebook_name",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "v_cores": {
+        "type": "int",
+        "defaultValue": 2
+      },
+      "notebook_id": {
+        "type": "string",
+        "defaultValue": "5204a490-7561-4d6a-a431-50e2511a08bb"
+      },
+      "notebook_name": {
+        "type": "string",
+        "defaultValue": "polars_benchmark"
+      }
+    },
+    "variables": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  }
+}

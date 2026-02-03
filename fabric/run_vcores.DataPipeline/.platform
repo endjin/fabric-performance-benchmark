@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "run_vcores"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "ab29b6f0-237d-91ff-4314-dda85e0c848c"
+  }
+}
