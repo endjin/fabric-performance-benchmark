@@ -1,0 +1,136 @@
+table benchmarks
+	lineageTag: 27691453-b384-4649-a9e4-824064007618
+	sourceLineageTag: [benchmark_repository].[benchmarks]
+
+	column order
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: a54c7274-0bc7-4e90-a5cf-1c6a8b133b2a
+		sourceLineageTag: order
+		summarizeBy: sum
+		sourceColumn: order
+
+		annotation SummarizationSetBy = Automatic
+
+	column platform
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 7cb24246-f9c2-4251-8156-e6ef2f94e44a
+		sourceLineageTag: platform
+		summarizeBy: none
+		sourceColumn: platform
+
+		annotation SummarizationSetBy = Automatic
+
+	column configuration
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: be585b0f-7a27-4f95-a43e-6d522dc7d638
+		sourceLineageTag: configuration
+		summarizeBy: none
+		sourceColumn: configuration
+		sortByColumn: cpu_count
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column workload_name
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e4930ddd-0837-42ee-9615-43c8b85eb880
+		sourceLineageTag: workload_name
+		summarizeBy: none
+		sourceColumn: workload_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column run_timestamp
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: afb14bdd-9b46-49bc-a744-c6efb5395885
+		sourceLineageTag: run_timestamp
+		summarizeBy: none
+		sourceColumn: run_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column stage_name
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: aea4811f-c743-4650-a16d-05b6dbefffdc
+		sourceLineageTag: stage_name
+		summarizeBy: none
+		sourceColumn: stage_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column cpu_count
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: c37bcf0e-2b6a-4e2c-8171-3311997a2357
+		sourceLineageTag: cpu_count
+		summarizeBy: sum
+		sourceColumn: cpu_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column cpu_usage
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 7914ba50-2451-4fa3-a7ae-0d8a226aa199
+		sourceLineageTag: cpu_usage
+		summarizeBy: sum
+		sourceColumn: cpu_usage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column memory
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 8a0deb11-9492-4e34-9cd1-a5f6b59fa8ed
+		sourceLineageTag: memory
+		summarizeBy: sum
+		sourceColumn: memory
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column memory_usage
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 74f45738-fa65-4ddb-826e-f464defe8701
+		sourceLineageTag: memory_usage
+		summarizeBy: sum
+		sourceColumn: memory_usage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stage_time_delta
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 567a1588-b4f9-437f-acaf-83c101e8ce93
+		sourceLineageTag: stage_time_delta
+		summarizeBy: sum
+		sourceColumn: stage_time_delta
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition benchmarks = entity
+		mode: directLake
+		source
+			entityName: benchmarks
+			schemaName: benchmark_repository
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
+

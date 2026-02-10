@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "run_spark_iterations"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "f44df78e-cd39-aaeb-4a19-8e6e1b09cb82"
+  }
+}

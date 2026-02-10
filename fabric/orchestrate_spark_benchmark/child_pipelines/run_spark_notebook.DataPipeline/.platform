@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "run_spark_notebook"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "09f603d2-1677-b132-43ba-ee6c15cda156"
+  }
+}

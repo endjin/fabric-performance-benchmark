@@ -1,0 +1,136 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@pipeline().parameters.configurations_to_run",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "iterations": {
+                    "value": "@pipeline().parameters.iterations",
+                    "type": "Expression"
+                  },
+                  "notebook_id": {
+                    "value": "@pipeline().parameters.notebook_id",
+                    "type": "Expression"
+                  },
+                  "notebook_name": {
+                    "value": "@pipeline().parameters.notebook_name",
+                    "type": "Expression"
+                  },
+                  "driver_memory": {
+                    "value": "@item().driver_memory",
+                    "type": "Expression"
+                  },
+                  "driver_cores": {
+                    "value": "@item().driver_cores",
+                    "type": "Expression"
+                  },
+                  "executor_memory": {
+                    "value": "@item().executor_memory",
+                    "type": "Expression"
+                  },
+                  "executor_cores": {
+                    "value": "@item().executor_cores",
+                    "type": "Expression"
+                  },
+                  "executor_number": {
+                    "value": "@item().executor_number",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "f44df78e-cd39-aaeb-4a19-8e6e1b09cb82",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "acd3ccdd-38bd-4bcc-b3a1-ac6aae83cecb"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "run_iterations",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "for_each_spark_configuration",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "iterations": {
+        "type": "int",
+        "defaultValue": 3
+      },
+      "configurations_to_run": {
+        "type": "array",
+        "defaultValue": [
+          {
+            "driver_memory": "28g",
+            "driver_cores": 4,
+            "executor_memory": "28g",
+            "executor_cores": 4,
+            "executor_number": 1
+          },
+          {
+            "driver_memory": "28g",
+            "driver_cores": 4,
+            "executor_memory": "28g",
+            "executor_cores": 4,
+            "executor_number": 2
+          },
+          {
+            "driver_memory": "28g",
+            "driver_cores": 4,
+            "executor_memory": "28g",
+            "executor_cores": 4,
+            "executor_number": 4
+          },
+          {
+            "driver_memory": "56g",
+            "driver_cores": 8,
+            "executor_memory": "56g",
+            "executor_cores": 8,
+            "executor_number": 1
+          },
+          {
+            "driver_memory": "56g",
+            "driver_cores": 8,
+            "executor_memory": "56g",
+            "executor_cores": 8,
+            "executor_number": 2
+          },
+          {
+            "driver_memory": "56g",
+            "driver_cores": 8,
+            "executor_memory": "56g",
+            "executor_cores": 8,
+            "executor_number": 4
+          }
+        ]
+      },
+      "notebook_id": {
+        "type": "string",
+        "defaultValue": "3a4f55e4-c646-42aa-825c-e8b4a44524dd"
+      },
+      "notebook_name": {
+        "type": "string",
+        "defaultValue": "pyspark_benchmark"
+      }
+    }
+  }
+}
