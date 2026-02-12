@@ -1,0 +1,21 @@
+[project]
+name = "fabric-performance-benchmark"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "ipykernel",
+    "nbformat",
+    "plotly",
+    "polars",
+    "pytest",
+    "azure-identity",
+    "deltalake",
+    "numpy",
+]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/onelake_tools"]
