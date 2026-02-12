@@ -12,6 +12,8 @@ dependencies = [
     "azure-identity",
     "deltalake",
     "numpy",
+    "pandas>=3.0.0",
+    "pyarrow>=23.0.0",
 ]
 [build-system]
 requires = ["hatchling"]

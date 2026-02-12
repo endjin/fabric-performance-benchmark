@@ -1,154 +1,52 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-  "name": "Agentic AI Dev Container",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:dev-10.0-noble",
-  "runArgs": [
-		"--gpus",
-		"all"
-		// Recommended for running Aspire in a Dev Container
-		// ,"--sysctl",
-		// "net.ipv6.conf.all.disable_ipv6=0",
-		// "--sysctl",
-		// "net.ipv6.conf.default.forwarding=1",
-		// "--sysctl",
-		// "net.ipv6.conf.all.forwarding=1"
-    ],
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/powershell:1": {
-      "version": "latest",
-      "modules": [
-        "Az"
-      ]
-    },
-    "ghcr.io/devcontainers/features/github-cli:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "enableNonRootDocker": true,
-      "moby": true
-    },
-    "ghcr.io/devcontainers/features/azure-cli:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/copilot-cli:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "username": "vscode"
-    }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        // Default extensions
-        "ms-vscode.powershell",
-        "ms-azuretools.vscode-docker",
-        "streetsidesoftware.code-spell-checker",
-        "fcrespo82.markdown-table-formatter",
-        "mechatroner.rainbow-csv",
-        "janisdd.vscode-edit-csv",
-        "GrapeCity.gc-excelviewer",
-        "GitHub.vscode-github-actions",
-        "stkb.rewrap",
-        "anthropic.claude-code",
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
-        "google.gemini-cli-vscode-ide-companion"
+	"name": "Ubuntu",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:noble",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "latest",
+			"moby": true
+		}
+	},
 
-        // Uncomment the sections below as needed
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
 
-        //// .NET extensions
-        // ,"ms-dotnettools.csdevkit",
-        // "ms-dotnettools.csharp",
-        // "editorconfig.editorconfig",
-        
-        //// Python extensions
-        // ,"ms-python.python",
-        // "ms-python.vscode-pylance",
-        // "ms-toolsai.jupyter",
-        // "tamasfe.even-better-toml",
-        // "jimasp.behave-vsc@0.6.4",
-        // "alexkrechik.cucumberautocomplete",
-        // "ms-python.flake8",
-        // "ms-python.black-formatter",
-        // "donjayamanne.vscode-default-python-kernel",
-        // "ms-python.isort",
-        // "ms-python.mypy-type-checker",
-        
-        //// Node extensions
-        // ,"dbaeumer.vscode-eslint",
-        // "christian-kohler.npm-intellisense",
-        // "ms-vscode.vscode-typescript-next",
-        // "ms-vscode.vscode-node-azure-pack"
-      ],
-      "settings": {
-        "terminal.integrated.profiles.linux": {
-          "Claude Code": {
-            "id": "Claude Code",
-            "title": "Claude Code",
-            "overrideName": true,
-            "icon": "agent",
-            "path": "bash",
-            "args": [
-              "-c",
-              "claude --dangerously-skip-permissions"
-            ]
-          },
-          "GitHub Copilot CLI": {
-            "id": "GitHub Copilot CLI",
-            "title": "GitHub Copilot CLI",
-            "overrideName": true,
-            "icon": "copilot",
-            "path": "bash",
-            "args": [
-              "-c",
-              "copilot --allow-all-tools"
-            ]
-          },
-          "Gemini CLI": {
-            "id": "Gemini CLI",
-            "title": "Gemini CLI",
-            "overrideName": true,
-            "icon": "agent",
-            "path": "bash",
-            "args": [
-              "-c",
-              "gemini --approval-mode yolo"
-            ]
-          }
-        }
-      }
-    }
-  },
-  "initializeCommand": {
-    "create-claude-config": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"New-Item -ItemType Directory -Force -Path $env:USERPROFILE\\.claude | Out-Null; if (-not (Test-Path -LiteralPath ($env:USERPROFILE + '\\.claude.json'))) { Set-Content -LiteralPath ($env:USERPROFILE + '\\.claude.json') -Value '{}' -Encoding UTF8 -NoNewline }\""
-  },
-  "postCreateCommand": "bash .devcontainer/setup.sh",
-  "remoteEnv": {
-    "GH_TOKEN": "${localEnv:GH_TOKEN}",
-    "IS_SANDBOX": "1",
-    "PATH": "${containerEnv:PATH}:/home/vscode/.dotnet/tools:/home/vscode/.local/bin",
-    "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
-    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
-    "SSL_CERT_DIR": "/home/vscode/.aspnet/dev-certs/trust"
-    // , "NVIDIA_VISIBLE_DEVICES": "all",
-    // "NVIDIA_DRIVER_CAPABILITIES": "compute,utility"
-  },
-  "remoteUser": "vscode",
-  "mounts": [
-    {
-      "source": "${localEnv:USERPROFILE}/.claude/",
-      "target": "/home/vscode/.claude",
-      "type": "bind"
-    },
-    {
-      "source": "${localEnv:USERPROFILE}/.claude.json",
-      "target": "/home/vscode/.claude.json",
-      "type": "bind"
-    }
-  ]
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\" && uv sync",
+	
+	// Environment variables
+	"containerEnv": {
+		"UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv-cache"
+	},
+	
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-toolsai.jupyter",
+				"ms-python.python",
+				"eliostruyf.vscode-demo-time",
+				"mechatroner.rainbow-csv",
+				"ms-azuretools.vscode-azureresourcegroups",
+				"ms-azuretools.vscode-azurecontainerapps",
+				"MermaidChart.vscode-mermaid-chart",
+				"vstirbu.vscode-mermaid-preview",
+				"bierner.markdown-mermaid",
+				"ms-toolsai.datawrangler"
+			],
+			"settings": {
+				"files.exclude": {
+					".uv-cache": true
+				}
+			}
+		}
+	}
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
 }
