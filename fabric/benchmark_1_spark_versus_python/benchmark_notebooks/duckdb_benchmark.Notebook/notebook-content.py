@@ -774,6 +774,14 @@ benchmark_manager.capture_benchmark("join_and_summarise")
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ## Phase 4 - Capture Results and Clean Up
+
+# MARKDOWN ********************
+
+# ### Write Benchmark Results to Lakehouse
+
 # CELL ********************
 
 benchmark_results = benchmark_manager.export_results()
@@ -807,6 +815,11 @@ logger.info(f"Notebook completed in {elapsed}.")
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# MARKDOWN ********************
+
+# ### Clean Up Lakehouse and Close Database Connection
+
 
 # CELL ********************
 

@@ -18,22 +18,22 @@
 # MAGIC     "driverMemory": 
 # MAGIC     { 
 # MAGIC         "parameterName": "driver_memory", 
-# MAGIC         "defaultValue": "28g" 
+# MAGIC         "defaultValue": "56g" 
 # MAGIC     },
 # MAGIC     "driverCores": 
 # MAGIC     { 
 # MAGIC         "parameterName": "driver_cores", 
-# MAGIC         "defaultValue": 4 
+# MAGIC         "defaultValue": 8
 # MAGIC     },
 # MAGIC     "executorMemory": 
 # MAGIC     { 
 # MAGIC         "parameterName": "executor_memory", 
-# MAGIC         "defaultValue": "28g"
+# MAGIC         "defaultValue": "56g"
 # MAGIC     },
 # MAGIC     "executorCores": 
 # MAGIC     { 
 # MAGIC         "parameterName": "executor_cores", 
-# MAGIC         "defaultValue": 4 
+# MAGIC         "defaultValue": 8 
 # MAGIC     },
 # MAGIC     "numExecutors": 
 # MAGIC     { 
@@ -49,15 +49,28 @@
 # META   "language_group": "synapse_pyspark"
 # META }
 
-# PARAMETERS CELL ********************
+# CELL ********************
 
-run_timestamp = None
-driver_memory = "28g"
-driver_cores = 4
-executor_memory = "28g"
-executor_cores = 4
-executor_number = 1
-notebook = ""
+spark_context = spark.sparkContext
+configuration = spark_context.getConf()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+(
+    configuration.get("spark.driver.memory"),
+    configuration.get("spark.driver.cores"),
+    configuration.get("spark.executor.memory"),
+    configuration.get("spark.executor.cores"),
+    configuration.get("spark.executor.instances"),
+    configuration.get("spark.dynamicAllocation.enabled")
+)
 
 # METADATA ********************
 

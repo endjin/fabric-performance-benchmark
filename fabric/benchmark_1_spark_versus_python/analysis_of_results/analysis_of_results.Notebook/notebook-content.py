@@ -14,7 +14,16 @@
 
 # # Analysis of Results
 # 
-# This notebook contains data preparation and analytics for the benchmarking results.
+# This notebook contains data preparation and analytics for the benchmarking results in Power BI.
+# 
+# Data is read in from Delta tables in lakehouse and the following steps are performed:
+# 
+# - Stage order added (to enable results to be sorted in in report).
+# - Phase is added to group up stages along with phase order.
+# - CUs per second are added based on the configuration of the environment which was used.
+# - Stage time delta is added to compute the elapsed time between stages using a windowing function.
+# 
+# The data is then written out to the lakehouse.
 
 # MARKDOWN ********************
 
@@ -101,7 +110,7 @@ storage_options = create_storage_options()
 
 # MARKDOWN ********************
 
-# ## Load and Prepare Raw Data
+# ## Load raw data
 
 # CELL ********************
 
@@ -150,7 +159,7 @@ benchmarks.schema
 
 # MARKDOWN ********************
 
-# ## Create Stages Reference Data
+# ## Add stages and phases reference data
 
 # CELL ********************
 
@@ -216,9 +225,9 @@ benchmarks = benchmarks.join(order_of_stages, on="stage_name")
 
 # MARKDOWN ********************
 
-# ## Configuration Scale
+# ## Add CUs per second based on configuration
 # 
-# Here we make sure the different configuations which were used across Python and Spark based environments are given an "configuration_scale" which will be used to sort the results based on increasing scale of resources (vCores, memory, executors).
+# Here we make sure the different configurations which were used across Python and Spark based environments are assigned a "CUs per second" which will be used to sort the results based on increasing scale of resources (vCores, memory, executors) and also compute a cost for running a specific workload.
 
 # CELL ********************
 
@@ -235,17 +244,72 @@ benchmarks["configuration"].unique().to_list()
 
 configurations = pl.DataFrame(
     [
-        {"configuration": "02 vCores", "configuration_scale": "10", "t_shirt_size": "XS"},
-        {"configuration": "04 vCores", "configuration_scale": "20", "t_shirt_size": "S"},
-        {"configuration": "08 vCores", "configuration_scale": "30", "t_shirt_size": "M"},
-        {"configuration": "16 vCores", "configuration_scale": "40", "t_shirt_size": "L"},
-        {"configuration": "32 vCores", "configuration_scale": "50", "t_shirt_size": "XL"},
-        {"configuration": "01 executors 04/04 cores 28g/28g memory", "configuration_scale": "25", "t_shirt_size": "S"},
-        {"configuration": "01 executors 08/08 cores 56g/56g memory", "configuration_scale": "32", "t_shirt_size": "M"},
-        {"configuration": "02 executors 04/04 cores 28g/28g memory", "configuration_scale": "34", "t_shirt_size": "M"},
-        {"configuration": "02 executors 08/08 cores 56g/56g memory", "configuration_scale": "43", "t_shirt_size": "L"},
-        {"configuration": "04 executors 04/04 cores 28g/28g memory", "configuration_scale": "46", "t_shirt_size": "L"},
-        {"configuration": "04 executors 08/08 cores 56g/56g memory", "configuration_scale": "55", "t_shirt_size": "XL"},
+        {
+            "configuration": "02 vCores",
+            "configuration_scale": "10",
+            "total_v_cores": 2,
+            "cu_per_second": 1,
+        },
+        {
+            "configuration": "04 vCores",
+            "configuration_scale": "20",
+            "total_v_cores": 4,
+            "cu_per_second": 2,
+        },
+        {
+            "configuration": "08 vCores",
+            "configuration_scale": "30",
+            "total_v_cores": 8,
+            "cu_per_second": 4,
+        },
+        {
+            "configuration": "16 vCores",
+            "configuration_scale": "40",
+            "total_v_cores": 16,
+            "cu_per_second": 8,
+        },
+        {
+            "configuration": "32 vCores",
+            "configuration_scale": "50",
+            "total_v_cores": 32,
+            "cu_per_second": 16,
+        },
+        {
+            "configuration": "01 executors 04/04 cores 28g/28g memory",
+            "configuration_scale": "25", 
+            "total_v_cores": 8,
+            "cu_per_second": 4,
+        },
+        {
+            "configuration": "02 executors 04/04 cores 28g/28g memory", 
+            "configuration_scale": "34", 
+            "total_v_cores": 12,
+            "cu_per_second": 6,
+        },
+        {
+            "configuration": "01 executors 08/08 cores 56g/56g memory",
+            "configuration_scale": "32",
+            "total_v_cores": 16,
+            "cu_per_second": 8,
+        },
+        {
+            "configuration": "04 executors 04/04 cores 28g/28g memory",
+            "configuration_scale": "46", 
+            "total_v_cores": 20,
+            "cu_per_second": 10,
+        },
+        {
+            "configuration": "02 executors 08/08 cores 56g/56g memory", 
+            "configuration_scale": "43", 
+            "total_v_cores": 24,
+            "cu_per_second": 12,
+        },
+        {
+            "configuration": "04 executors 08/08 cores 56g/56g memory",
+            "configuration_scale": "55", 
+            "total_v_cores": 40,
+            "cu_per_second": 20,
+        },
     ]
 )
 
@@ -258,7 +322,12 @@ configurations = pl.DataFrame(
 
 # CELL ********************
 
-configurations.write_delta(configurations_path, mode="overwrite", storage_options=storage_options)
+configurations.write_delta(
+    configurations_path,
+    mode="overwrite",
+    storage_options=storage_options,
+    delta_write_options={"schema_mode": "overwrite"}
+    )
 
 # METADATA ********************
 
@@ -291,7 +360,7 @@ benchmarks
 
 # MARKDOWN ********************
 
-# ## Data Preparation
+# ## Data preparation
 
 # CELL ********************
 
@@ -313,65 +382,18 @@ benchmarks = (
 # META   "language_group": "jupyter_python"
 # META }
 
-# CELL ********************
+# MARKDOWN ********************
 
-benchmarks.write_delta(benchmark_analytics_path, mode="overwrite", storage_options=storage_options)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
+# ## Write data to lakehouse
 
 # CELL ********************
 
-stage_benchmarks = (
-    benchmarks
-    .sort(["run_timestamp", "order"])
-    .group_by(["platform", "configuration", "workload_name", "run_timestamp", "phase", "phase_order", "configuration_scale"])
-    .agg(pl.col("stage_time_delta").sum().alias("phase_time"))
-    .sort(["platform", "configuration", "workload_name", "run_timestamp", "phase_order"])
+benchmarks.write_delta(
+    benchmark_analytics_path,
+    mode="overwrite",
+    storage_options=storage_options,
+    delta_write_options={"schema_mode": "overwrite"}
 )
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-stage_benchmarks
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-overall_benchmarks = (
-    benchmarks
-    .sort(["run_timestamp", "order"])
-    .group_by(["platform", "configuration", "workload_name", "run_timestamp", "configuration_scale"])
-    .agg(pl.col("stage_time_delta").sum().alias("total_time"))
-    .sort(["platform", "configuration", "workload_name", "run_timestamp"])
-)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-overall_benchmarks
 
 # METADATA ********************
 
