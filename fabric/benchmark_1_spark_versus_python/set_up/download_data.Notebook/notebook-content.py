@@ -48,9 +48,13 @@ logger.setLevel(logging.INFO)
 
 # CELL ********************
 
-WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
-LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
-RAW_DATA_RELATIVE_PATH = "land_registry"
+# Create connection to variable library
+variable_library = notebookutils.variableLibrary.getLibrary("benchmark_1_variables")
+
+# Retrieve workspace name, lakehouse name and raw source data folder path from variable library
+WORKSPACE_NAME = variable_library.workspace_name
+LAKEHOUSE_NAME = variable_library.lakehouse_name
+RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 
 # METADATA ********************
 

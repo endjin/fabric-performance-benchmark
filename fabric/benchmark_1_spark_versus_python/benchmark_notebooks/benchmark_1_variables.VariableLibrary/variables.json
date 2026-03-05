@@ -1,0 +1,23 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "workspace_name",
+      "note": "",
+      "type": "String",
+      "value": "fabric_performance_benchmark_workspace"
+    },
+    {
+      "name": "lakehouse_name",
+      "note": "",
+      "type": "String",
+      "value": "fabric_performance_benchmark_lakehouse"
+    },
+    {
+      "name": "raw_data_relative_path",
+      "note": "",
+      "type": "String",
+      "value": "land_registry"
+    }
+  ]
+}
