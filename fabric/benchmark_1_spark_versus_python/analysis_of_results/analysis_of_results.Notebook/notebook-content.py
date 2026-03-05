@@ -42,10 +42,12 @@ import polars as pl
 
 # CELL ********************
 
-# Pre-requisities are to create a Fabric Workspace with a lakehouse, putting names here:
-WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
-LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
+# Create connection to variable library
+variable_library = notebookutils.variableLibrary.getLibrary("benchmark_1_variables")
 
+# Retrieve workspace name and lakehouse name from variable library
+WORKSPACE_NAME = variable_library.workspace_name
+LAKEHOUSE_NAME = variable_library.lakehouse_name
 
 # METADATA ********************
 
