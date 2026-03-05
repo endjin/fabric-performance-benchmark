@@ -152,6 +152,52 @@ The notebook writes processed data to the `benchmark_repository/benchmark_analyt
    - Stage-level breakdowns
    - Configuration comparisons
 
+## Local Development
+
+You can run the analysis notebook locally on your machine, which provides access to modern IDEs, faster iteration, and the ability to customise the analysis. The local notebook `notebooks/fabric-benchmarking-part-1.ipynb` connects directly to Fabric and generates detailed analytics with Markdown commentary — this notebook formed the basis of our [blog series on this topic](https://endjin.com/blog/2026/03/fabric-performance-benchmarking-part-1).
+
+### Prerequisites
+
+- [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or compatible container runtime)
+- Access to a Fabric workspace with benchmark data
+
+### Getting Started
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/endjin/fabric-performance-benchmark.git
+   ```
+
+2. Open the folder in VS Code:
+
+   ```bash
+   code fabric-performance-benchmark
+   ```
+
+3. When prompted, click **Reopen in Container** (or use the Command Palette: `Dev Containers: Reopen in Container`)
+
+4. Wait for the container to build — this automatically installs Python 3.12 and all dependencies via `uv`
+
+### Run the Local Analysis Notebook
+
+1. Navigate to `notebooks/fabric-benchmarking-part-1.ipynb`
+2. Update the workspace and lakehouse names if different from defaults:
+
+   ```python
+   WORKSPACE_NAME = "fabric_performance_benchmark_workspace"
+   LAKEHOUSE_NAME = "fabric_performance_benchmark_lakehouse"
+   ```
+
+3. Run all cells to:
+   - Authenticate with OneLake via browser (uses `InteractiveBrowserCredential`)
+   - Load benchmark data from the Fabric Lakehouse
+   - Generate interactive Plotly visualisations
+   - View detailed Markdown commentary explaining each analysis
+
+> **Note**: The local notebook reads data directly from OneLake, so you must have run the benchmarks in Fabric first to have data available for analysis.
+
 ## Benchmark Configurations
 
 ### Python Notebook Configurations
