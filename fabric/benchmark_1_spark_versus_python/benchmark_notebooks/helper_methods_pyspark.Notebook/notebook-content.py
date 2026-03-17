@@ -4,8 +4,7 @@
 
 # META {
 # META   "kernel_info": {
-# META     "name": "jupyter",
-# META     "jupyter_kernel_name": "python3.11"
+# META     "name": "synapse_pyspark"
 # META   }
 # META }
 
@@ -17,38 +16,48 @@ from typing import Callable, Any
 from urllib.parse import quote
 import psutil
 import notebookutils
-import polars as pl
 
+from pyspark.sql import Window
+from pyspark.sql import functions as F
 
 # METADATA ********************
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
 
-def export_with_polars(manager):
-    """Export benchmark results using Polars and write to Delta Lake."""
-    records = pl.DataFrame([asdict(b) for b in manager.benchmarks])
+def export_with_spark(manager):
+    """Export benchmark results using PySpark and write to Delta Lake."""
+
+    records = spark.createDataFrame([asdict(b) for b in manager.benchmarks])
+
+    window_spec = Window.orderBy("stage_time")
+
     records = (
-        records.sort("stage_time", descending=False)
-        .with_row_index("order", offset=1)
-        .with_columns(
-            (pl.col("stage_time").diff().dt.total_milliseconds().alias("stage_time_delta") / 1000)
+        records.orderBy("stage_time")
+        .withColumn("order", F.row_number().over(window_spec))
+        .withColumn(
+            "stage_time_delta",
+            F.round(
+                F.col("stage_time").cast("double")
+                - F.lag("stage_time", 1).over(window_spec).cast("double"),
+                3,
+            ),
         )
+        .withColumn("stage_time", F.col("stage_time").cast("timestamp_ntz"))
     )
-    records.write_delta(
-        manager.export_abfss_path, mode="append", storage_options=manager.storage_options
-    )
+
+    records.write.format("delta").mode("append").save(manager.export_abfss_path)
     return records
 
 # METADATA ********************
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
@@ -135,5 +144,5 @@ class BenchmarkManager:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }

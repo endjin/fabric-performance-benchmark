@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
     "type": "Notebook",
-    "displayName": "helper_methods",
-    "description": "New notebook"
+    "displayName": "helper_methods_python",
+    "description": "Helper methods to enable connection to lakehouse and capturing benchmarks for Python notebooks."
   },
   "config": {
     "version": "2.0",

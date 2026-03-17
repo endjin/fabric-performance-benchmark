@@ -2,10 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
     "type": "Notebook",
-    "displayName": "export_benchmarks_pyspark"
+    "displayName": "helper_methods_pyspark",
+    "description": "New notebook"
   },
   "config": {
     "version": "2.0",
-    "logicalId": "548af342-e83c-84a4-40d5-96bdabc6d2ec"
+    "logicalId": "f1617fba-2019-9d38-4022-9ba8c2371ffa"
   }
 }
