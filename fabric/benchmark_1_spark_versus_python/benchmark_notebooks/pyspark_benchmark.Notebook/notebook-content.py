@@ -217,7 +217,7 @@ benchmark_manager = BenchmarkManager(
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
     storage_options=storage_options,
-    export=export_with_spark
+    exporter=export_with_spark
 )
 
 # METADATA ********************
