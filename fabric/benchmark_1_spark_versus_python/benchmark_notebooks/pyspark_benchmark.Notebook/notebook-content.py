@@ -49,6 +49,17 @@
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# PARAMETERS CELL ********************
+
+run_timestamp = None
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
 # CELL ********************
 
 spark_context = spark.sparkContext
@@ -71,6 +82,28 @@ configuration = spark_context.getConf()
     configuration.get("spark.executor.instances"),
     configuration.get("spark.dynamicAllocation.enabled")
 )
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+%run helper_methods
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+%run export_benchmarks_pyspark
 
 # METADATA ********************
 
@@ -121,17 +154,13 @@ from pyspark.sql import Window
 
 # MARKDOWN ********************
 
-# ### Common Code
-# 
-# The code in this section is common across all notebooks.
-# 
-# It is used to:
+# In this section we perform the following tasks:
 # - Set up logging
 # - Set constants for workspace and lakehouse names
 # - Set relative path for source data used as input
 # - Set the ABFSS paths for reading from / writing to lakehouse
 # - Set up the `storage_options` parameter
-# - Log benchmarks
+# - Log initial benchmarks
 
 # CELL ********************
 
@@ -177,106 +206,6 @@ RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 
 # CELL ********************
 
-# Common code used to set up all notebooks
-
-# Helper function to create base ABFSS path based on workspace and lakehouse name
-def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
-    """Construct the base ABFSS path for a given workspace and lakehouse."""
-    # Because it is a URL, replace spaces with %20
-    workspace_name = workspace_name.replace(" ", "%20")
-    lakehouse_name = lakehouse_name.replace(" ", "%20")
-    return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
-
-# Helper function to create storage options that enable data tools to authenticate and interact with onelake storage
-def create_storage_options() -> dict:
-    return {
-        "bearer_token": notebookutils.credentials.getToken('storage'),
-        "use_fabric_endpoint": "true"
-    }
-
-# Data class to store benchmark metrics at key points during notebook process 
-@dataclass
-class Benchmark:
-    platform: str
-    configuration: str
-    workload_name: str
-    run_timestamp: str
-    stage_name: str
-    stage_time: float
-    cpu_count:float
-    cpu_usage: float
-    memory: float
-    memory_usage:float
-
-
-# Benchmark Manager class will help capture benchmarks consistently, then write them out to lakehouse at end of notebook
-class BenchmarkManager:
-
-    benchmarks = []
-
-    def __init__(self, platform: str, configuration:str, workload_name: str, run_timestamp: str, export_abfss_path:str, storage_options:dict):
-        self.platform = platform
-        self.configuration = configuration
-        self.workload_name = workload_name
-        self.run_timestamp = run_timestamp
-        self.export_abfss_path = export_abfss_path
-        self.storage_options = storage_options
-    
-    def capture_benchmark(self, stage_name, timestamp=None):
-
-        if timestamp is None:
-            timestamp = datetime.now()
-
-        self.benchmarks.append(
-            Benchmark(
-                platform=self.platform,
-                configuration=self.configuration,
-                workload_name=self.workload_name,
-                run_timestamp=self.run_timestamp,
-                stage_name=stage_name,
-                stage_time=timestamp,
-                cpu_count=psutil.cpu_count(),
-                cpu_usage=psutil.cpu_percent(interval=None),
-                memory=(psutil.virtual_memory().total / (1024 * 1024 * 1024)),
-                memory_usage=psutil.virtual_memory().percent,
-            )
-        )
-    
-    def export_results(self):
-        records_to_export = spark.createDataFrame([asdict(benchmark) for benchmark in self.benchmarks])
-        
-        # Define window for ordering by stage_time
-        window_spec = Window.orderBy("stage_time")
-        
-        records_to_export = (
-            records_to_export
-            .orderBy("stage_time")
-            .withColumn("order", F.row_number().over(window_spec))
-            .withColumn("stage_time_delta", 
-                F.round(
-                    F.col("stage_time").cast("double") - F.lag("stage_time", 1).over(window_spec).cast("double"),
-                    3
-                )
-            )
-        )
-
-        records_to_export = records_to_export.withColumn(
-            "stage_time", F.col("stage_time").cast("timestamp_ntz")
-        )
-        
-        records_to_export.write.format("delta").mode("append").save(self.export_abfss_path)
-        return records_to_export
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 # Contruct source path for raw data
 source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
@@ -298,7 +227,8 @@ benchmark_manager = BenchmarkManager(
     workload_name=notebook,
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
-    storage_options=storage_options
+    storage_options=storage_options,
+    export=export_with_spark
 )
 
 # METADATA ********************

@@ -55,6 +55,17 @@ notebook = ""
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+%run export_benchmarks_python
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # # Polars Benchmark
@@ -80,9 +91,8 @@ import time
 import logging
 from datetime import datetime, timezone
 
-# Imports specific to duckdb version of notebook
+# Imports specific to DuckDB version of notebook
 import duckdb
-import polars as pl
 from deltalake import write_deltalake  # Unfortunately duckdb does not yet support writing to Azure, so we need write_deltalake to address that requirement
 
 # METADATA ********************
@@ -100,7 +110,7 @@ from deltalake import write_deltalake  # Unfortunately duckdb does not yet suppo
 # - Set relative path for source data used as input
 # - Set the ABFSS paths for reading from / writing to lakehouse
 # - Set up the `storage_options` parameter
-# - Log benchmarks
+# - Log initial benchmarks
 
 # CELL ********************
 
@@ -144,12 +154,6 @@ RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 # META   "language_group": "jupyter_python"
 # META }
 
-# MARKDOWN ********************
-
-# ### Configuration
-# 
-# Configuring the lakehouse paths and helper functions used throughout the notebook.
-
 # CELL ********************
 
 # Contruct source path for raw data
@@ -173,7 +177,8 @@ benchmark_manager = BenchmarkManager(
     workload_name=notebook,
     run_timestamp=run_timestamp,
     export_abfss_path=f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Tables/benchmark_repository/benchmarks",
-    storage_options=storage_options
+    storage_options=storage_options,
+    exporter=export_with_polars
 )
 
 # METADATA ********************
@@ -187,17 +192,6 @@ benchmark_manager = BenchmarkManager(
 
 # Create an in-memory DuckDB connection
 con = duckdb.connect()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-duckdb.__version__
 
 # METADATA ********************
 
