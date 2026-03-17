@@ -92,18 +92,7 @@ configuration = spark_context.getConf()
 
 # CELL ********************
 
-%run helper_methods
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-%run export_benchmarks_pyspark
+%run helper_methods_pyspark
 
 # METADATA ********************
 

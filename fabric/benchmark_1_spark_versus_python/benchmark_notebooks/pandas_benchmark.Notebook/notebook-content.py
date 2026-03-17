@@ -42,18 +42,7 @@ notebook = ""
 
 # CELL ********************
 
-%run helper_methods
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-%run export_benchmarks_python
+%run helper_methods_python
 
 # METADATA ********************
 
