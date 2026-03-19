@@ -1,1 +1,1 @@
-This is an auto-created file for fabric
+This folder contains all Microsoft Fabric items that are synced to and from a Fabric workspace via [Git integration](https://learn.microsoft.com/en-us/fabric/cicd/git-integration/intro-to-git-integration). See the [main README](../README.md) for setup and deployment instructions.

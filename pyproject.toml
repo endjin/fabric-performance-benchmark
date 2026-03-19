@@ -1,7 +1,7 @@
 [project]
 name = "fabric-performance-benchmark"
 version = "0.1.0"
-description = "Add your description here"
+description = "A benchmarking framework for comparing data processing engines (Pandas, PySpark, Polars, DuckDB) on Microsoft Fabric."
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "ipykernel",

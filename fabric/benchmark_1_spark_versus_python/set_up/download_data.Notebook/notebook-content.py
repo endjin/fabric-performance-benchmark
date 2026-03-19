@@ -24,6 +24,7 @@
 import notebookutils
 import requests
 import fsspec
+from urllib.parse import quote
 
 import logging
 
@@ -67,9 +68,8 @@ RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 
 def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
     """Construct the base ABFSS path for a given workspace and lakehouse."""
-    # Because it is a URL, replace spaces with %20
-    workspace_name = workspace_name.replace(" ", "%20")
-    lakehouse_name = lakehouse_name.replace(" ", "%20")
+    workspace_name = quote(workspace_name, safe='')
+    lakehouse_name = quote(lakehouse_name, safe='')
     return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
 
 def create_storage_options() -> dict:
@@ -91,9 +91,9 @@ storage_options = create_storage_options()
 
 # CELL ********************
 
-class LandRegstryImporter:
+class LandRegistryImporter:
 
-    HOUSE_PRICE_BASE_URL = "http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/"
+    HOUSE_PRICE_BASE_URL = "https://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/"
 
     # Each file is approximately 100MB in size.  Change the number of years to control the total data size.
     def __init__(self, data_download_path: str, storage_options: dict, number_of_years: int = 5):
@@ -136,7 +136,7 @@ class LandRegstryImporter:
 
 # CELL ********************
 
-land_registry_importer = LandRegstryImporter(
+land_registry_importer = LandRegistryImporter(
     data_download_path=source_path,
     storage_options=storage_options,
     number_of_years=1

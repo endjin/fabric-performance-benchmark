@@ -83,6 +83,8 @@ fabric-performance-benchmark/
 
 Fabric will import all items from the repository into your workspace. This may take a few minutes.
 
+> **Important**: After syncing, Fabric assigns new IDs to all items (notebooks, pipelines, etc.). The Data Factory pipelines contain references to notebook and child pipeline IDs that will need to be re-linked. Open each pipeline, verify the notebook and child pipeline references resolve correctly, and re-select them from the dropdowns if needed.
+
 ### 4. Configure the Lakehouse
 
 After syncing, verify the lakehouse is correctly configured:
@@ -97,10 +99,11 @@ The benchmark uses UK Land Registry house price data (1995-present, ~30 million 
 
 1. Navigate to **set_up** folder in your workspace
 2. Open **download_data** notebook
-3. Run all cells to download the CSV files from the Land Registry
-4. Verify the data appears in the lakehouse **Files** area under `land_registry/`
+3. The notebook defaults to downloading 1 year of data (~100MB). To run the full benchmark as described in our blog post, update `number_of_years` in the `LandRegistryImporter` constructor to `30` for the complete dataset (~5GB, ~30 CSV files)
+4. Run all cells to download the CSV files from the Land Registry
+5. Verify the data appears in the lakehouse **Files** area under `land_registry/`
 
-> **Note**: The download may take 10-15 minutes depending on network speed. The notebook downloads approximately 30 CSV files (one per year).
+> **Note**: Download times depend on the `number_of_years` setting and network speed. The full 30-year dataset may take 10-15 minutes.
 
 ### 6. Run the Benchmarks
 
@@ -143,10 +146,9 @@ The notebook writes processed data to the `benchmark_repository/benchmark_analyt
 ### 8. View the Report
 
 1. Navigate to **analysis_of_results** folder
-2. Click **c95114c9-5174-ad7a-4ae1-e3a2a8f7a9ab** semantic model
-3. Click **Refresh now** to load the latest benchmark data
-4. Open **benchmark_analytics** report
-5. Explore the interactive visualisations:
+2. Click the **Benchmark Analytics** semantic model (the name may appear as a GUID in the file explorer — look for the item with type **Semantic Model**)
+3. Open **benchmark_analytics** report
+4. Explore the interactive visualisations:
    - Execution time comparisons
    - Cost analysis
    - Stage-level breakdowns
@@ -209,13 +211,16 @@ You can run the analysis notebook locally on your machine, which provides access
 | 4              | 8      | 64 GB  |
 | 8              | 16     | 128 GB |
 | 16             | 32     | 256 GB |
+| 32             | 64     | 512 GB |
 
 ### Spark Notebook Configurations
 
 | CUs Per Second | Executors | vCores (Driver/Executor) | RAM (Driver/Executor) |
 | -------------- | --------- | ------------------------ | --------------------- |
 | 4              | 1         | 4/4                      | 28G/28G               |
+| 6              | 2         | 4/4                      | 28G/28G               |
 | 8              | 1         | 8/8                      | 56G/56G               |
+| 10             | 4         | 4/4                      | 28G/28G               |
 | 12             | 2         | 8/8                      | 56G/56G               |
 | 20             | 4         | 8/8                      | 56G/56G               |
 
@@ -235,10 +240,20 @@ This project uses open data from the [UK Land Registry Price Paid Data](https://
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## Troubleshooting
+
+| Problem | Solution |
+| ------- | -------- |
+| **Pipelines show "item not found" errors** | After syncing from Git, Fabric assigns new IDs. Open each pipeline and re-select the notebook/child pipeline references from the dropdowns. |
+| **Notebooks can't find the lakehouse** | Open each notebook and re-attach the default lakehouse (`fabric_performance_benchmark_lakehouse`) via the lakehouse explorer panel. |
+| **Variable library errors** | Ensure the `benchmark_1_variables` variable library exists in the workspace and contains `workspace_name`, `lakehouse_name`, and `raw_data_relative_path`. |
+| **Spark benchmarks fail with capacity errors** | Larger Spark configurations (4 executors, 8/8 vCores) require substantial Fabric capacity (F16+). Start with smaller configurations or reduce the `configurations_to_run` parameter. |
+| **Download notebook fails** | The Land Registry S3 endpoint may be temporarily unavailable. Retry after a few minutes. |
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## About endjin
 
-[endjin](https://endjin.com) is a technology consultancy specialising in Data, AI & Advanced Analytics, and Azure Platform Engineering. We help organisations make better decisions through data.
+[endjin](https://endjin.com) is a technology consultancy specialising in software engineering, data analytics,  AI and Azure platform.

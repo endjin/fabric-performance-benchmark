@@ -3,7 +3,7 @@
   "metadata": {
     "type": "Notebook",
     "displayName": "helper_methods_pyspark",
-    "description": "New notebook"
+    "description": "Helper methods to enable connection to lakehouse and capturing benchmarks for PySpark notebooks."
   },
   "config": {
     "version": "2.0",

@@ -6,18 +6,6 @@
 # META   "kernel_info": {
 # META     "name": "jupyter",
 # META     "jupyter_kernel_name": "python3.11"
-# META   },
-# META   "dependencies": {
-# META     "lakehouse": {
-# META       "default_lakehouse": "26fa5d18-b3bc-49f6-be0d-3424cd026fce",
-# META       "default_lakehouse_name": "fabric_performance_benchmark_lakehouse",
-# META       "default_lakehouse_workspace_id": "23d2362b-6b5f-4894-8472-c09991fc07a6",
-# META       "known_lakehouses": [
-# META         {
-# META           "id": "26fa5d18-b3bc-49f6-be0d-3424cd026fce"
-# META         }
-# META       ]
-# META     }
 # META   }
 # META }
 
@@ -108,9 +96,6 @@ import polars as pl
 # - Set up the `storage_options` parameter
 # - Log initial benchmarks
 
-# MARKDOWN ********************
-
-
 # CELL ********************
 
 logger = logging.getLogger(name="polars_benchmark_notebook")
@@ -155,7 +140,7 @@ RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 
 # CELL ********************
 
-# Contruct source path for raw data
+# Construct source path for raw data
 source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
 # Construct base path for lakehouse schema
@@ -189,7 +174,7 @@ benchmark_manager = BenchmarkManager(
 
 # CELL ********************
 
-# Convert from string in formant "yyyyMMdd_HHmmss" to datetime
+# Convert from string in format "yyyyMMdd_HHmmss" to datetime
 benchmark_manager.capture_benchmark("start", timestamp=datetime.strptime(run_timestamp, '%Y%m%d_%H%M%S'))
 
 # METADATA ********************
@@ -221,7 +206,7 @@ benchmark_manager.capture_benchmark("setup")
 # CELL ********************
 
 price_paid_data = pl.scan_csv(
-    source_path,  # AFBSS path to the CSV files in the Files area.
+    source_path,  # ABFSS path to the CSV files in the Files area.
     has_header=False,
     null_values=[""],
     storage_options=storage_options,  # Provides Polars with the necessary credentials to read from Fabric.
@@ -387,7 +372,7 @@ price_paid_data = (
 
 # ### Cache
 # 
-# Here we use the `collect()` method to cache the transformed raw data so that downstream creation of Prices, Dates and Locations can leverage a single source of data in memory, rather than re-loading it multuple times from storage.
+# Here we use the `collect()` method to cache the transformed raw data so that downstream creation of Prices, Dates and Locations can leverage a single source of data in memory, rather than re-loading it multiple times from storage.
 
 # CELL ********************
 
@@ -443,7 +428,7 @@ prices = price_paid_data_cached.select([
 
 # CELL ********************
 
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+logger.info(f"Writing prices data to Delta: {target_path_prices}")
 prices.collect().write_delta(target_path_prices, mode="overwrite", storage_options=storage_options)
 
 # METADATA ********************
@@ -513,7 +498,7 @@ dates = (
 
 # CELL ********************
 
-logger.info(f"Writing dates data to Parquet: {target_path_dates}")
+logger.info(f"Writing dates data to Delta: {target_path_dates}")
 dates.write_delta(target_path_dates, mode="overwrite", storage_options=storage_options)
 
 # METADATA ********************
@@ -538,7 +523,7 @@ benchmark_manager.capture_benchmark("write_dates")
 
 # ### Create and write Locations dimension
 # 
-# Assumption is there is a hierarchy in descreasing order of granularity:
+# Assumption is there is a hierarchy in decreasing order of granularity:
 # 
 # - County
 # - District
@@ -567,7 +552,7 @@ locations = (
 
 # CELL ********************
 
-logger.info(f"Writing locations data to Parquet: {target_path_locations}")
+logger.info(f"Writing locations data to Delta: {target_path_locations}")
 locations.collect().write_delta(target_path_locations, mode="overwrite", storage_options=storage_options)
 
 # METADATA ********************

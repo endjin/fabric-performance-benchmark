@@ -3,7 +3,7 @@
   "metadata": {
     "type": "Notebook",
     "displayName": "pandas_benchmark",
-    "description": "New notebook"
+    "description": "Pandas benchmark notebook for processing UK Land Registry data on a Fabric Python Notebook."
   },
   "config": {
     "version": "2.0",

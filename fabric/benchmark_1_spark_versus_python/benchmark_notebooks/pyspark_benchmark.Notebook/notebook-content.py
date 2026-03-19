@@ -52,6 +52,12 @@
 # PARAMETERS CELL ********************
 
 run_timestamp = None
+notebook = ""
+driver_memory = "56g"
+driver_cores = 8
+executor_memory = "56g"
+executor_cores = 8
+executor_number = 1
 
 # METADATA ********************
 
@@ -306,7 +312,7 @@ RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 
 # CELL ********************
 
-# Contruct source path for raw data
+# Construct source path for raw data
 source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
 # Construct base path for lakehouse schema
@@ -340,7 +346,7 @@ benchmark_manager = BenchmarkManager(
 
 # CELL ********************
 
-# Convert from string in formant "yyyyMMdd_HHmmss" to datetime
+# Convert from string in format "yyyyMMdd_HHmmss" to datetime
 benchmark_manager.capture_benchmark("start", timestamp=datetime.strptime(run_timestamp, '%Y%m%d_%H%M%S'))
 
 # METADATA ********************
@@ -591,8 +597,7 @@ prices = price_paid_data_cached.select(
 
 # CELL ********************
 
-import os
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+logger.info(f"Writing prices data to Delta: {target_path_prices}")
 prices.write.mode("overwrite").format("delta").save(target_path_prices)
 
 # METADATA ********************
@@ -668,7 +673,7 @@ dates = (
 
 # CELL ********************
 
-logger.info(f"Writing dates data to Parquet: {target_path_dates}")
+logger.info(f"Writing dates data to Delta: {target_path_dates}")
 dates.write.mode("overwrite").format("delta").save(target_path_dates)
 
 # METADATA ********************
@@ -693,7 +698,7 @@ benchmark_manager.capture_benchmark("write_dates")
 
 # ### Create and write Locations dimension
 # 
-# Assumption is there is a hierarchy in descreasing order of granularity:
+# Assumption is there is a hierarchy in decreasing order of granularity:
 # 
 # - County
 # - District
@@ -720,7 +725,7 @@ locations = (
 
 # CELL ********************
 
-logger.info(f"Writing locations data to Parquet: {target_path_locations}")
+logger.info(f"Writing locations data to Delta: {target_path_locations}")
 locations.write.mode("overwrite").format("delta").save(target_path_locations)
 
 # METADATA ********************
@@ -755,8 +760,8 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # CELL ********************
 
-# Load prices from Parquet and filter them to exclude "Other" property types
-logger.info(f"Reading prices data back from Parquet: {target_path_prices}")
+# Load prices from Delta and filter them to exclude "Other" property types
+logger.info(f"Reading prices data back from Delta: {target_path_prices}")
 prices = (
     spark.read
     .format("delta")
@@ -789,7 +794,7 @@ benchmark_manager.capture_benchmark("read_prices")
 # CELL ********************
 
 # Load the date dimension, add a new month_tag column in the form YYYY_MM
-logger.info(f"Reading dates data back from Parquet: {target_path_dates}")
+logger.info(f"Reading dates data back from Delta: {target_path_dates}")
 dates = (
     spark.read
     .format("delta")

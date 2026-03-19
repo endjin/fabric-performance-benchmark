@@ -3,7 +3,7 @@
   "metadata": {
     "type": "Notebook",
     "displayName": "analysis_of_results",
-    "description": "New notebook"
+    "description": "Processes raw benchmark data and prepares it for Power BI reporting."
   },
   "config": {
     "version": "2.0",

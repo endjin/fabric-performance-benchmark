@@ -32,6 +32,7 @@
 # CELL ********************
 
 import polars as pl
+from urllib.parse import quote
 
 # METADATA ********************
 
@@ -61,9 +62,8 @@ LAKEHOUSE_NAME = variable_library.lakehouse_name
 # Helper function to create base ABFSS path based on workspace and lakehouse name
 def construct_base_abfss_path(workspace_name: str, lakehouse_name: str) -> str:
     """Construct the base ABFSS path for a given workspace and lakehouse."""
-    # Because it is a URL, replace spaces with %20
-    workspace_name = workspace_name.replace(" ", "%20")
-    lakehouse_name = lakehouse_name.replace(" ", "%20")
+    workspace_name = quote(workspace_name, safe='')
+    lakehouse_name = quote(lakehouse_name, safe='')
     return f"abfss://{workspace_name}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse"
 
 # Helper function to create storage options that enable data tools to authenticate and interact with onelake storage

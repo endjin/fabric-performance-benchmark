@@ -3,7 +3,7 @@
   "metadata": {
     "type": "Notebook",
     "displayName": "download_data",
-    "description": "New notebook"
+    "description": "Downloads UK Land Registry price paid data to the Fabric Lakehouse."
   },
   "config": {
     "version": "2.0",

@@ -102,7 +102,7 @@
       },
       "notebook_name": {
         "type": "string",
-        "defaultValue": "polars_benchmark"
+        "defaultValue": "pyspark_benchmark"
       },
       "driver_memory": {
         "type": "string",

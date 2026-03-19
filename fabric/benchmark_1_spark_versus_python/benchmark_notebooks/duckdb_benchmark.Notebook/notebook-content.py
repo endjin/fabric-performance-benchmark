@@ -57,7 +57,7 @@ notebook = ""
 
 # MARKDOWN ********************
 
-# # Polars Benchmark
+# # DuckDB Benchmark
 # 
 # This notebook runs a representative end to end use case over data sourced from the [UK Land Registry House Price Data open data repository](https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads).
 # 
@@ -145,7 +145,7 @@ RAW_DATA_RELATIVE_PATH = variable_library.raw_data_relative_path
 
 # CELL ********************
 
-# Contruct source path for raw data
+# Construct source path for raw data
 source_path = f"{construct_base_abfss_path(WORKSPACE_NAME, LAKEHOUSE_NAME)}/Files/{RAW_DATA_RELATIVE_PATH}/*.csv"
 
 # Construct base path for lakehouse schema
@@ -206,7 +206,7 @@ con.execute("LOAD azure;")
 
 # CELL ********************
 
-# Convert from string in formant "yyyyMMdd_HHmmss" to datetime
+# Convert from string in format "yyyyMMdd_HHmmss" to datetime
 benchmark_manager.capture_benchmark("start", timestamp=datetime.strptime(run_timestamp, '%Y%m%d_%H%M%S'))
 
 # METADATA ********************
@@ -378,7 +378,7 @@ con.execute("""
 
 # CELL ********************
 
-logger.info(f"Writing prices data to Parquet: {target_path_prices}")
+logger.info(f"Writing prices data to Delta: {target_path_prices}")
 write_deltalake(
     target_path_prices,
     con.execute("SELECT * FROM prices").fetch_record_batch(),
@@ -463,7 +463,7 @@ con.execute(f"""
 
 # CELL ********************
 
-logger.info(f"Writing dates data to Parquet: {target_path_dates}")
+logger.info(f"Writing dates data to Delta: {target_path_dates}")
 write_deltalake(
     target_path_dates,
     con.execute("SELECT * FROM dates").arrow(),
@@ -521,7 +521,7 @@ con.execute("""
 
 # CELL ********************
 
-logger.info(f"Writing locations data to Parquet: {target_path_locations}")
+logger.info(f"Writing locations data to Delta: {target_path_locations}")
 write_deltalake(
     target_path_locations,
     con.execute("SELECT * FROM locations").arrow(),
@@ -562,8 +562,8 @@ benchmark_manager.capture_benchmark("write_locations")
 
 # CELL ********************
 
-# Load prices from Parquet and filter out "Other" property types
-logger.info(f"Reading prices data back from Parquet: {target_path_prices}")
+# Load prices from Delta and filter out "Other" property types
+logger.info(f"Reading prices data back from Delta: {target_path_prices}")
 con.execute(f"""
     CREATE OR REPLACE VIEW prices_filtered AS
     SELECT *
@@ -596,7 +596,7 @@ benchmark_manager.capture_benchmark("read_prices")
 # CELL ********************
 
 # Load the date dimension with month_tag column
-logger.info(f"Reading dates data back from Parquet: {target_path_dates}")
+logger.info(f"Reading dates data back from Delta: {target_path_dates}")
 con.execute(f"""
     CREATE OR REPLACE VIEW dates_with_tag AS
     SELECT 
