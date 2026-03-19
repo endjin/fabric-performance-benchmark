@@ -1,0 +1,278 @@
+table benchmark_analytics
+	lineageTag: 3535d707-9493-456f-bf5a-cb12bd90a54e
+	sourceLineageTag: [benchmark_repository].[benchmark_analytics]
+
+	measure 'Total Time' = ```
+			SUM(benchmark_analytics[stage_time_delta])
+			
+			```
+		lineageTag: e9b04e6c-c661-49ae-b39e-62f32f8270be
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Average Time' = AVERAGEX(SUMMARIZE(benchmark_analytics, [platform], [workload_name], [configuration],[cu_per_second], [run_timestamp], "total_time", [Total Time]), [total_time])
+		lineageTag: 2beb9be0-37cd-404b-ad3a-72e8cb1f1e96
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Run Count' = DISTINCTCOUNT(benchmark_analytics[run_timestamp])
+		formatString: 0
+		lineageTag: 69f3d9e4-4f6e-4588-85df-55b3ce430ce1
+
+		changedProperty = Name
+
+	measure 'Median Stage Time' = MEDIAN(benchmark_analytics[stage_time_delta])
+		lineageTag: 94ddbaa0-91f6-4d6c-a849-6bd3c860f017
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Average Cost' = AVERAGEX(ADDCOLUMNS(SUMMARIZE(benchmark_analytics, [platform], [workload_name], [configuration],[cu_per_second], [run_timestamp], "total_time", [Total Time]), "cost", [Total Time] * [cu_per_second]), [cost])
+		lineageTag: 70f5b1bc-3372-4d3e-8618-49abf8bdeaec
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Median Cost' = MEDIANX(ADDCOLUMNS(SUMMARIZE(benchmark_analytics, [platform], [workload_name], [configuration],[cu_per_second], [run_timestamp], "total_time", [Total Time]), "cost", [Total Time] * [cu_per_second]), [cost])
+		lineageTag: 3f90632c-9c10-454a-a59f-73bc5eae50c7
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Median Time' = AVERAGEX(SUMMARIZE(benchmark_analytics, [platform], [workload_name], [configuration],[cu_per_second], [run_timestamp], "total_time", [Total Time]), [total_time])
+		lineageTag: 0e6d41e6-a41e-40dd-b3fe-7330ed40e767
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column order
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: e19619db-1369-42b9-b102-eb22eb2f94c8
+		sourceLineageTag: order
+		summarizeBy: sum
+		sourceColumn: order
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column platform
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 08771caf-1df2-4dcc-b504-88636e82aeb2
+		sourceLineageTag: platform
+		summarizeBy: none
+		sourceColumn: platform
+
+		annotation SummarizationSetBy = Automatic
+
+	column configuration
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 9e5d2533-5c8e-4bfd-b4af-3a45901885d5
+		sourceLineageTag: configuration
+		summarizeBy: none
+		sourceColumn: configuration
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column workload_name
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: c6aae719-0b05-49e9-9c5a-486c6fca6572
+		sourceLineageTag: workload_name
+		summarizeBy: none
+		sourceColumn: workload_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column run_timestamp
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 41d3cb25-4faf-413e-823e-0d3de7669d6b
+		sourceLineageTag: run_timestamp
+		summarizeBy: none
+		sourceColumn: run_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column stage_name
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 6b110336-4167-4716-8f1c-26f11fbe5f77
+		sourceLineageTag: stage_name
+		summarizeBy: none
+		sourceColumn: stage_name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column cpu_count
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: 0025220d-4ed6-4c37-9964-1dd476aa28e3
+		sourceLineageTag: cpu_count
+		summarizeBy: sum
+		sourceColumn: cpu_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column cpu_usage
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 3281c02d-487b-4fe9-806c-5d120b8c1835
+		sourceLineageTag: cpu_usage
+		summarizeBy: sum
+		sourceColumn: cpu_usage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column memory
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 86bf09f1-08c7-4b71-bcf0-169e34dab268
+		sourceLineageTag: memory
+		summarizeBy: sum
+		sourceColumn: memory
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column memory_usage
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 6f007ea2-9c8c-4c07-9056-7730a1fddb9a
+		sourceLineageTag: memory_usage
+		summarizeBy: sum
+		sourceColumn: memory_usage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stage_time_delta
+		dataType: double
+		sourceProviderType: float
+		lineageTag: aa0cab0b-a0ac-47c5-b2c3-570d4ddca569
+		sourceLineageTag: stage_time_delta
+		summarizeBy: sum
+		sourceColumn: stage_time_delta
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stage_order
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: 3387879c-c160-4bf7-a007-a0a5c028544e
+		sourceLineageTag: stage_order
+		summarizeBy: sum
+		sourceColumn: stage_order
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column phase
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e589a03b-8f65-427d-9763-9ce19a0bfec4
+		sourceLineageTag: phase
+		summarizeBy: none
+		sourceColumn: phase
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column phase_order
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: 7ca47764-e919-47aa-9dcb-3d35011b4189
+		sourceLineageTag: phase_order
+		summarizeBy: sum
+		sourceColumn: phase_order
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column configuration_scale
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e9c82caa-689f-4799-9b0b-5a3a47b87813
+		sourceLineageTag: configuration_scale
+		summarizeBy: none
+		sourceColumn: configuration_scale
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column cumulative_time
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 39acef1f-3d9b-4c16-8c8c-d6c11b8e35ed
+		sourceLineageTag: cumulative_time
+		summarizeBy: sum
+		sourceColumn: cumulative_time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_v_cores
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: ce206928-ddb6-4ff8-95c5-31489b0ceb2b
+		sourceLineageTag: total_v_cores
+		summarizeBy: sum
+		sourceColumn: total_v_cores
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column cu_per_second
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: 292c2649-3b61-43d1-97ce-a3e860c3abed
+		sourceLineageTag: cu_per_second
+		summarizeBy: sum
+		sourceColumn: cu_per_second
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition benchmark_analytics = entity
+		mode: directLake
+		source
+			entityName: benchmark_analytics
+			schemaName: benchmark_repository
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
+

@@ -1,4 +1,0 @@
-relationship 013ec1bc-2a08-32e1-5758-2776554226cd
-	fromColumn: benchmarks.stage_name
-	toColumn: stages.stage_name
-

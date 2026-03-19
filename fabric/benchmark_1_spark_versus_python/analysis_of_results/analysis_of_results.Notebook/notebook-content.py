@@ -360,6 +360,17 @@ benchmarks
 # META   "language_group": "jupyter_python"
 # META }
 
+# CELL ********************
+
+benchmarks.sort("stage_time")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # MARKDOWN ********************
 
 # ## Data preparation

@@ -13,6 +13,5 @@ annotation PBI_QueryOrder = ["DatabaseQuery"]
 
 annotation PBI_ProTooling = ["WebModelingEdit"]
 
-ref table benchmarks
-ref table stages
+ref table benchmark_analytics
 
