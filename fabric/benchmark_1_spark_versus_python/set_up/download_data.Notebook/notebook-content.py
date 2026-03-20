@@ -93,7 +93,7 @@ storage_options = create_storage_options()
 
 class LandRegistryImporter:
 
-    HOUSE_PRICE_BASE_URL = "https://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/"
+    HOUSE_PRICE_BASE_URL = "https://price-paid-data.publicdata.landregistry.gov.uk/"
 
     # Each file is approximately 100MB in size.  Change the number of years to control the total data size.
     def __init__(self, data_download_path: str, storage_options: dict, number_of_years: int = 5):
