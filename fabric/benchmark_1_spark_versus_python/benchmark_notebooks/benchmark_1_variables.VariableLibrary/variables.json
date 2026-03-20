@@ -18,6 +18,24 @@
       "note": "",
       "type": "String",
       "value": "land_registry"
+    },
+    {
+      "name": "polars_benchmark_notebook_id",
+      "note": "",
+      "type": "String",
+      "value": "5204a490-7561-4d6a-a431-50e2511a08bb"
+    },
+    {
+      "name": "duckdb_benchmark_notebook_id",
+      "note": "",
+      "type": "String",
+      "value": "e8daef53-1e77-45da-8161-a411758a56a3"
+    },
+    {
+      "name": "pandas_benchmark_notebook_id",
+      "note": "",
+      "type": "String",
+      "value": "9e895c1f-7deb-42d8-93af-e01297ea7510"
     }
   ]
 }
