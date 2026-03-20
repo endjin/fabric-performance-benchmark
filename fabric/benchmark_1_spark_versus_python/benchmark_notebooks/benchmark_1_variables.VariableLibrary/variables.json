@@ -56,12 +56,10 @@
       }
     },
     {
-      "name": "pipeline_connection",
+      "name": "execute_pipeline_connection_id",
       "note": "",
-      "type": "ConnectionReference",
-      "value": {
-        "connectionId": "477b499a-2728-4f29-9dde-0c482e2a0c8d"
-      }
+      "type": "Guid",
+      "value": "acd3ccdd-38bd-4bcc-b3a1-ac6aae83cecb"
     }
   ]
 }

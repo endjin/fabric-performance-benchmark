@@ -37,7 +37,7 @@
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
-                "connection": "@pipeline().libraryVariables.benchmark_1_variables_pipeline_connection.connectionId"
+                "connection": "@pipeline().libraryVariables.benchmark_1_variables_execute_pipeline_connection_id"
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -113,9 +113,9 @@
         "variableName": "pandas_benchmark",
         "libraryName": "benchmark_1_variables"
       },
-      "benchmark_1_variables_pipeline_connection": {
-        "type": "Object",
-        "variableName": "pipeline_connection",
+      "benchmark_1_variables_execute_pipeline_connection_id": {
+        "type": "String",
+        "variableName": "execute_pipeline_connection_id",
         "libraryName": "benchmark_1_variables"
       }
     },

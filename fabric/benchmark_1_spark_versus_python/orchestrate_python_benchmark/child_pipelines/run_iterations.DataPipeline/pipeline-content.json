@@ -49,7 +49,7 @@
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
-                "connection": "@pipeline().libraryVariables.benchmark_1_variables_pipeline_connection.connectionId"
+                "connection": "@pipeline().libraryVariables.benchmark_1_variables_pipeline_connection"
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -95,8 +95,8 @@
     },
     "libraryVariables": {
       "benchmark_1_variables_pipeline_connection": {
-        "type": "Object",
-        "variableName": "pipeline_connection",
+        "type": "String",
+        "variableName": "execute_pipeline_connection_id",
         "libraryName": "benchmark_1_variables"
       }
     },
