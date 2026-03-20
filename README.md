@@ -83,7 +83,7 @@ fabric-performance-benchmark/
 
 Fabric will import all items from the repository into your workspace. This may take a few minutes.
 
-> **Important**: After syncing, Fabric assigns new IDs to all items (notebooks, pipelines, etc.). The Data Factory pipelines contain references to notebook and child pipeline IDs that will need to be re-linked. Open each pipeline, verify the notebook and child pipeline references resolve correctly, and re-select them from the dropdowns if needed.
+> **Important**: After syncing, Fabric assigns new IDs to all items (notebooks, pipelines, etc.). The Data Factory pipelines reference notebook IDs via **Item Reference** variables in the `benchmark_1_variables` Variable Library, so these will resolve automatically once the Variable Library is updated. However, child pipeline references within the orchestration pipelines may still need to be re-linked — open each pipeline and verify the child pipeline references resolve correctly, re-selecting them from the dropdowns if needed.
 
 ### 4. Configure the Lakehouse
 
@@ -244,9 +244,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 | Problem | Solution |
 | ------- | -------- |
-| **Pipelines show "item not found" errors** | After syncing from Git, Fabric assigns new IDs. Open each pipeline and re-select the notebook/child pipeline references from the dropdowns. |
+| **Pipelines show "item not found" errors** | After syncing from Git, Fabric assigns new IDs. Notebook references are resolved automatically via the Variable Library's Item Reference variables. For child pipeline references, open each pipeline and re-select them from the dropdowns. |
 | **Notebooks can't find the lakehouse** | Open each notebook and re-attach the default lakehouse (`fabric_performance_benchmark_lakehouse`) via the lakehouse explorer panel. |
-| **Variable library errors** | Ensure the `benchmark_1_variables` variable library exists in the workspace and contains `workspace_name`, `lakehouse_name`, and `raw_data_relative_path`. |
+| **Variable library errors** | Ensure the `benchmark_1_variables` variable library exists in the workspace and contains `workspace_name`, `lakehouse_name`, `raw_data_relative_path`, and the notebook Item Reference variables (`polars_benchmark`, `duckdb_benchmark`, `pandas_benchmark`, `pyspark_benchmark`). After syncing from Git, verify the Item Reference variables point to the correct notebook IDs in your workspace. |
 | **Spark benchmarks fail with capacity errors** | Larger Spark configurations (4 executors, 8/8 vCores) require substantial Fabric capacity (F16+). Start with smaller configurations or reduce the `configurations_to_run` parameter. |
 | **Download notebook fails** | The Land Registry S3 endpoint may be temporarily unavailable. Retry after a few minutes. |
 
