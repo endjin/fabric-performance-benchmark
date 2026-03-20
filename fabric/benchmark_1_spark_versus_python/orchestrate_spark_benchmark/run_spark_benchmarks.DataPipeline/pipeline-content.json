@@ -53,7 +53,7 @@
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
-                "connection": "acd3ccdd-38bd-4bcc-b3a1-ac6aae83cecb"
+                "connection": "@pipeline().libraryVariables.benchmark_1_variables_pipeline_connection.connectionId"
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -132,6 +132,11 @@
       "benchmark_1_variables_pyspark_benchmark": {
         "type": "Object",
         "variableName": "pyspark_benchmark",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_pipeline_connection": {
+        "type": "Object",
+        "variableName": "pipeline_connection",
         "libraryName": "benchmark_1_variables"
       }
     }

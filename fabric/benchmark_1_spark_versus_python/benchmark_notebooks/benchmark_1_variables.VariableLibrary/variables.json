@@ -54,6 +54,14 @@
         "itemId": "3a4f55e4-c646-42aa-825c-e8b4a44524dd",
         "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6"
       }
+    },
+    {
+      "name": "pipeline_connection",
+      "note": "",
+      "type": "ConnectionReference",
+      "value": {
+        "connectionId": "477b499a-2728-4f29-9dde-0c482e2a0c8d"
+      }
     }
   ]
 }
