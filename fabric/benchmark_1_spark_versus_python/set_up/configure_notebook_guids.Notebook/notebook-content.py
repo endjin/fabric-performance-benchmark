@@ -25,12 +25,6 @@ import base64
 # META   "language_group": "jupyter_python"
 # META }
 
-# MARKDOWN ********************
-
-# ## Helper: Poll long-running operation
-# 
-# Fabric's `getDefinition` and `updateDefinition` APIs are asynchronous long-running operations. They return a 202 with a `Location` header URL that must be polled (with auth headers) until the operation completes.
-
 # CELL ********************
 
 def poll_long_running_operation(location_url, headers, max_retries=10, retry_interval=2):
@@ -118,9 +112,9 @@ notebook_id
 
 # MARKDOWN ********************
 
-# ## Look up Variable Library by name
+# ## Update variable in Fabric variable library
 # 
-# Use the Items API to find the Variable Library ID by name, then retrieve its definition via the long-running `getDefinition` API.
+# Now trying to update a variable in a Fabric Variable Library with the notebook_id.  This ID is referenced by pipelines in the solution which orchestrate running the notebook.
 
 # CELL ********************
 
@@ -137,7 +131,6 @@ headers = {"Authorization": f"Bearer {bearer_token}"}
 
 # CELL ********************
 
-# Look up the Variable Library ID by name using the Items API
 items_response = requests.get(
     url=f"https://api.fabric.microsoft.com/v1/workspaces/{current_workspace_id}/items?type=VariableLibrary",
     headers=headers
@@ -153,7 +146,7 @@ for item in items_response.json().get("value", []):
 if not variable_library_id:
     raise Exception("Variable library 'benchmark_1_variables' not found in workspace")
 
-print(f"Variable Library ID: {variable_library_id}")
+variable_library_id
 
 # METADATA ********************
 
@@ -164,7 +157,6 @@ print(f"Variable Library ID: {variable_library_id}")
 
 # CELL ********************
 
-# Get the current Variable Library definition
 response = requests.post(
     url=f"https://api.fabric.microsoft.com/v1/workspaces/{current_workspace_id}/variableLibraries/{variable_library_id}/getDefinition",
     headers=headers
@@ -192,12 +184,21 @@ definition_response.json()
 
 # CELL ********************
 
-# Decode the variables.json part from the definition response
 definition_parts = definition_response.json()["definition"]["parts"]
 variables_part = next(p for p in definition_parts if p["path"] == "variables.json")
 variables_payload = json.loads(base64.b64decode(variables_part["payload"]).decode("utf-8"))
 
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
 print(json.dumps(variables_payload, indent=2))
+
 
 # METADATA ********************
 
