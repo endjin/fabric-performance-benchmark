@@ -67,7 +67,7 @@
         "typeProperties": {
           "variableName": "list_of_notebooks",
           "value": {
-            "value": "@createArray(\n  json(concat(\n    '{\"notebook_name\":\"polars_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_polars_benchmark.ItemID,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"duckdb_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_duckdb_benchmark.ItemID,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"pandas_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_pandas_benchmark.ItemID,\n    '\"}'\n  ))\n)",
+            "value": "@createArray(\n  json(concat(\n    '{\"notebook_name\":\"polars_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_polars_benchmark_notebook_id,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"duckdb_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_duckdb_benchmark_notebook_id,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"pandas_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_pandas_benchmark_notebook_id,\n    '\"}'\n  ))\n)",
             "type": "Expression"
           }
         },
@@ -98,24 +98,24 @@
       }
     },
     "libraryVariables": {
-      "benchmark_1_variables_polars_benchmark": {
-        "type": "Object",
-        "variableName": "polars_benchmark",
-        "libraryName": "benchmark_1_variables"
-      },
-      "benchmark_1_variables_duckdb_benchmark": {
-        "type": "Object",
-        "variableName": "duckdb_benchmark",
-        "libraryName": "benchmark_1_variables"
-      },
-      "benchmark_1_variables_pandas_benchmark": {
-        "type": "Object",
-        "variableName": "pandas_benchmark",
-        "libraryName": "benchmark_1_variables"
-      },
       "benchmark_1_variables_execute_pipeline_connection_id": {
         "type": "String",
         "variableName": "execute_pipeline_connection_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_polars_benchmark_notebook_id": {
+        "type": "String",
+        "variableName": "polars_benchmark_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_duckdb_benchmark_notebook_id": {
+        "type": "String",
+        "variableName": "duckdb_benchmark_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_pandas_benchmark_notebook_id": {
+        "type": "String",
+        "variableName": "pandas_benchmark_notebook_id",
         "libraryName": "benchmark_1_variables"
       }
     },

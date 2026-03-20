@@ -20,34 +20,34 @@
       "value": "land_registry"
     },
     {
-      "name": "polars_benchmark",
+      "name": "execute_pipeline_connection_id",
+      "note": "",
+      "type": "Guid",
+      "value": "acd3ccdd-38bd-4bcc-b3a1-ac6aae83cecb"
+    },
+    {
+      "name": "polars_benchmark_notebook_id",
       "note": "",
       "type": "Guid",
       "value": "5204a490-7561-4d6a-a431-50e2511a08bb"
     },
     {
-      "name": "duckdb_benchmark",
+      "name": "duckdb_benchmark_notebook_id",
       "note": "",
       "type": "Guid",
       "value": "e8daef53-1e77-45da-8161-a411758a56a3"
     },
     {
-      "name": "pandas_benchmark",
+      "name": "pandas_benchmark_notebook_id",
       "note": "",
       "type": "Guid",
       "value": "9e895c1f-7deb-42d8-93af-e01297ea7510"
     },
     {
-      "name": "pyspark_benchmark",
+      "name": "pyspark_benchmark_notebook_id",
       "note": "",
       "type": "Guid",
       "value": "3a4f55e4-c646-42aa-825c-e8b4a44524dd"
-    },
-    {
-      "name": "execute_pipeline_connection_id",
-      "note": "",
-      "type": "Guid",
-      "value": "acd3ccdd-38bd-4bcc-b3a1-ac6aae83cecb"
     }
   ]
 }
