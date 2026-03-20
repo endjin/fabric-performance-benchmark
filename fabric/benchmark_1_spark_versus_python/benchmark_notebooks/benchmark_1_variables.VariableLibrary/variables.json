@@ -20,22 +20,40 @@
       "value": "land_registry"
     },
     {
-      "name": "polars_benchmark_notebook_id",
+      "name": "polars_benchmark",
       "note": "",
-      "type": "String",
-      "value": "5204a490-7561-4d6a-a431-50e2511a08bb"
+      "type": "ItemReference",
+      "value": {
+        "itemId": "5204a490-7561-4d6a-a431-50e2511a08bb",
+        "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6"
+      }
     },
     {
-      "name": "duckdb_benchmark_notebook_id",
+      "name": "duckdb_benchmark",
       "note": "",
-      "type": "String",
-      "value": "e8daef53-1e77-45da-8161-a411758a56a3"
+      "type": "ItemReference",
+      "value": {
+        "itemId": "e8daef53-1e77-45da-8161-a411758a56a3",
+        "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6"
+      }
     },
     {
-      "name": "pandas_benchmark_notebook_id",
+      "name": "pandas_benchmark",
       "note": "",
-      "type": "String",
-      "value": "9e895c1f-7deb-42d8-93af-e01297ea7510"
+      "type": "ItemReference",
+      "value": {
+        "itemId": "9e895c1f-7deb-42d8-93af-e01297ea7510",
+        "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6"
+      }
+    },
+    {
+      "name": "pyspark_benchmark",
+      "note": "",
+      "type": "ItemReference",
+      "value": {
+        "itemId": "3a4f55e4-c646-42aa-825c-e8b4a44524dd",
+        "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6"
+      }
     }
   ]
 }

@@ -19,7 +19,7 @@
                     "type": "Expression"
                   },
                   "notebook_id": {
-                    "value": "@pipeline().parameters.notebook_id",
+                    "value": "@pipeline().libraryVariables.benchmark_1_variables_pyspark_benchmark.ItemID",
                     "type": "Expression"
                   },
                   "notebook_name": {
@@ -123,13 +123,16 @@
           }
         ]
       },
-      "notebook_id": {
-        "type": "string",
-        "defaultValue": "3a4f55e4-c646-42aa-825c-e8b4a44524dd"
-      },
       "notebook_name": {
         "type": "string",
         "defaultValue": "pyspark_benchmark"
+      }
+    },
+    "libraryVariables": {
+      "benchmark_1_variables_pyspark_benchmark": {
+        "type": "Object",
+        "variableName": "pyspark_benchmark",
+        "libraryName": "benchmark_1_variables"
       }
     }
   }

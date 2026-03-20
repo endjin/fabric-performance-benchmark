@@ -6,7 +6,7 @@
         "typeProperties": {
           "isSequential": true,
           "items": {
-            "value": "@pipeline().parameters.notebooks_to_run",
+            "value": "@variables('list_of_notebooks')",
             "type": "Expression"
           },
           "activities": [
@@ -53,27 +53,34 @@
         },
         "name": "for_each_notebook",
         "description": "Iterate through each notebook (Polars, Pandas, DuckDB).",
+        "dependsOn": [
+          {
+            "activity": "Create List of Notebooks to Run",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "list_of_notebooks",
+          "value": {
+            "value": "@createArray(\n  json(concat(\n    '{\"notebook_name\":\"polars_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_polars_benchmark.ItemID,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"duckdb_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_duckdb_benchmark.ItemID,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"pandas_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_pandas_benchmark.ItemID,\n    '\"}'\n  ))\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Create List of Notebooks to Run",
+        "description": "Looks up notebook IDs based on item references in Variable Library.",
         "dependsOn": []
       }
     ],
     "parameters": {
-      "notebooks_to_run": {
-        "type": "array",
-        "defaultValue": [
-          {
-            "notebook_name": "polars_benchmark",
-            "notebook_id": "5204a490-7561-4d6a-a431-50e2511a08bb"
-          },
-          {
-            "notebook_name": "duckdb_benchmark",
-            "notebook_id": "e8daef53-1e77-45da-8161-a411758a56a3"
-          },
-          {
-            "notebook_name": "pandas_benchmark",
-            "notebook_id": "9e895c1f-7deb-42d8-93af-e01297ea7510"
-          }
-        ]
-      },
       "vcores_to_run": {
         "type": "array",
         "defaultValue": [
@@ -88,6 +95,28 @@
       "iterations": {
         "type": "int",
         "defaultValue": 3
+      }
+    },
+    "libraryVariables": {
+      "benchmark_1_variables_polars_benchmark": {
+        "type": "Object",
+        "variableName": "polars_benchmark",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_duckdb_benchmark": {
+        "type": "Object",
+        "variableName": "duckdb_benchmark",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_pandas_benchmark": {
+        "type": "Object",
+        "variableName": "pandas_benchmark",
+        "libraryName": "benchmark_1_variables"
+      }
+    },
+    "variables": {
+      "list_of_notebooks": {
+        "type": "Array"
       }
     }
   }
