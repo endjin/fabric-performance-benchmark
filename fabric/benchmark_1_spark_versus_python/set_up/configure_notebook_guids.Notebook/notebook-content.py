@@ -247,3 +247,87 @@ print(json.dumps(variables_payload, indent=2))
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+# Update the specific variable in the payload
+variable_name_to_update = f"{notebook_name}_notebook_id"  # e.g., "pyspark_benchmark_notebook_id"
+
+variable_found = False
+for var in variables_payload["variables"]:
+    if var["name"] == variable_name_to_update:
+        old_value = var["value"]
+        var["value"] = notebook_id
+        variable_found = True
+        print(f"Updated '{variable_name_to_update}': {old_value} -> {notebook_id}")
+        break
+
+if not variable_found:
+    raise Exception(f"Variable '{variable_name_to_update}' not found in variable library")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+# Re-encode the updated variables.json
+updated_variables_b64 = base64.b64encode(
+    json.dumps(variables_payload, indent=2).encode("utf-8")
+).decode("utf-8")
+
+# Rebuild the definition with all original parts (updating only variables.json)
+updated_parts = []
+for part in definition_parts:
+    if part["path"] == "variables.json":
+        updated_parts.append({
+            "path": "variables.json",
+            "payload": updated_variables_b64,
+            "payloadType": "InlineBase64"
+        })
+    else:
+        updated_parts.append(part)
+
+print(f"Prepared {len(updated_parts)} definition parts for update")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
+# Call updateDefinition API
+logger.debug(f"Calling updateDefinition for variable library {variable_library_id}")
+update_response = requests.post(
+    url=f"https://api.fabric.microsoft.com/v1/workspaces/{current_workspace_id}/variableLibraries/{variable_library_id}/updateDefinition",
+    headers={**headers, "Content-Type": "application/json"},
+    json={"definition": {"parts": updated_parts}}
+)
+
+logger.debug(f"updateDefinition HTTP status: {update_response.status_code}")
+logger.debug(f"updateDefinition response headers: {dict(update_response.headers)}")
+
+# Handle response
+if update_response.status_code == 202:
+    # Long-running operation — poll until complete
+    location = update_response.headers.get("Location")
+    logger.debug(f"Async update started. Polling location: {location}")
+    poll_long_running_operation(location, headers)
+    print(f"✓ Variable library updated successfully. '{variable_name_to_update}' = '{notebook_id}'")
+elif update_response.status_code == 200:
+    print(f"✓ Variable library updated successfully. '{variable_name_to_update}' = '{notebook_id}'")
+else:
+    raise Exception(f"Update failed with status {update_response.status_code}: {update_response.text}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
