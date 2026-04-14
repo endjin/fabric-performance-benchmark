@@ -5,7 +5,7 @@
     "displayName": "configure_workspace",
     "description": "Configures the current Fabric workspace for the benchmarking solution."
   },
-    "config": {
+  "config": {
     "version": "2.0",
     "logicalId": "d9fd08b2-bab9-b153-410d-1018374b54c6"
   }
