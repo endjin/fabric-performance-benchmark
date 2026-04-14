@@ -78,7 +78,7 @@ fabric-performance-benchmark/
 5. Authenticate with GitHub if prompted
 6. Select your forked repository
 7. Choose the **main** branch
-8. Set the Git folder to `/fabric`
+8. Set the Git folder to `fabric`
 9. Click **Connect and sync**
 
 Fabric will import all items from the repository into your workspace. This may take a few minutes.
