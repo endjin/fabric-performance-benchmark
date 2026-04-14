@@ -103,8 +103,16 @@ from deltalake import write_deltalake  # Unfortunately duckdb does not yet suppo
 
 # CELL ********************
 
+# Fabric notebooks pre-configure root logger handlers, so logging.basicConfig() is a no-op.
+# Instead, set the format and level on the existing handlers directly.
+# See: https://learn.microsoft.com/fabric/data-engineering/author-execute-notebook#python-logging-in-a-notebook
+_log_format = "%(asctime)s %(name)s %(levelname)s %(message)s"
+_formatter = logging.Formatter(fmt=_log_format)
+for _handler in logging.getLogger().handlers:
+    _handler.setFormatter(_formatter)
+logging.getLogger().setLevel(logging.INFO)
+
 logger = logging.getLogger(name="duckdb_benchmark_notebook")
-logger.setLevel(logging.INFO)
 
 # METADATA ********************
 
@@ -237,7 +245,7 @@ benchmark_manager.capture_benchmark("setup")
 
 # CELL ********************
 
-logging.info(f"Reading price paid data from location {source_path}...")
+logger.info(f"Reading price paid data from location {source_path}...")
 
 # DuckDB can read multiple CSV files using glob patterns
 # Create a view from the CSV files with explicit column names
