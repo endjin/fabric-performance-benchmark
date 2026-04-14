@@ -70,26 +70,35 @@ class FabricVariableLibrary:
         new_value: str,
     ) -> None:
         """Read the variable library, update a single variable, and write it back."""
+        self.update_variables(library_id, {variable_name: new_value})
+
+    def update_variables(
+        self,
+        library_id: str,
+        updates: dict[str, str],
+    ) -> None:
+        """Read the variable library, apply all *updates*, and write back in a single call.
+
+        *updates* is a ``{variable_name: new_value}`` dict.
+        """
         parts, variables_payload = self.get_variables(library_id)
 
-        # Find and update the target variable
-        variable_found = False
+        remaining = dict(updates)
         for var in variables_payload["variables"]:
-            if var["name"] == variable_name:
+            if var["name"] in remaining:
                 old_value = var["value"]
-                var["value"] = new_value
-                variable_found = True
+                var["value"] = remaining.pop(var["name"])
                 logger.info(
                     "Variable '%s' updated: '%s' → '%s'",
-                    variable_name,
+                    var["name"],
                     old_value,
-                    new_value,
+                    var["value"],
                 )
-                break
 
-        if not variable_found:
+        if remaining:
             raise ValueError(
-                f"Variable '{variable_name}' not found in variable library {library_id}"
+                f"Variables not found in variable library {library_id}: "
+                f"{', '.join(sorted(remaining))}"
             )
 
         # Re-encode and rebuild the definition
@@ -119,7 +128,6 @@ class FabricVariableLibrary:
         self._client.handle_lro_response(response)
 
         logger.info(
-            "Variable library updated successfully — '%s' = '%s'",
-            variable_name,
-            new_value,
+            "Variable library updated successfully — %d variable(s) written",
+            len(updates),
         )

@@ -401,17 +401,22 @@ class FabricVariableLibrary:
         return parts, variables_payload
 
     def update_variable(self, library_id: str, variable_name: str, new_value: str) -> None:
+        """Update a single variable (convenience wrapper around update_variables)."""
+        self.update_variables(library_id, {variable_name: new_value})
+
+    def update_variables(self, library_id: str, updates: dict[str, str]) -> None:
+        """Apply all *updates* ({name: value}) in a single read-update-write cycle."""
         parts, variables_payload = self.get_variables(library_id)
-        variable_found = False
+
+        remaining = dict(updates)
         for var in variables_payload["variables"]:
-            if var["name"] == variable_name:
+            if var["name"] in remaining:
                 old_value = var["value"]
-                var["value"] = new_value
-                variable_found = True
-                logger.info("Variable '%s' updated: '%s' → '%s'", variable_name, old_value, new_value)
-                break
-        if not variable_found:
-            raise ValueError(f"Variable '{variable_name}' not found in variable library {library_id}")
+                var["value"] = remaining.pop(var["name"])
+                logger.info("Variable '%s' updated: '%s' → '%s'", var["name"], old_value, var["value"])
+
+        if remaining:
+            raise ValueError(f"Variables not found in variable library {library_id}: {', '.join(sorted(remaining))}")
 
         updated_b64 = base64.b64encode(json.dumps(variables_payload, indent=2).encode("utf-8")).decode("utf-8")
         updated_parts = []
@@ -426,7 +431,7 @@ class FabricVariableLibrary:
         logger.info("Updating definition for variable library %s", library_id)
         response = self._client.post(url, json_body={"definition": {"parts": updated_parts}})
         self._client.handle_lro_response(response)
-        logger.info("Variable library updated successfully — '%s' = '%s'", variable_name, new_value)
+        logger.info("Variable library updated successfully — %d variable(s) written", len(updates))
 
 # METADATA ********************
 
@@ -441,15 +446,18 @@ class FabricVariableLibrary:
 
 # CELL ********************
 
+# Workspace details
+CURRENT_WORKSPACE_NAME = notebookutils.runtime.context.get('currentWorkspaceName')
+
 # Connection settings
-CONNECTION_DISPLAY_NAME = "Fabric Data Pipelines (Workspace Identity)"
+CONNECTION_DISPLAY_NAME = f"Fabric Data Pipelines (Workspace Identity) - {CURRENT_WORKSPACE_NAME}"
 CONNECTION_TYPE = "FabricDataPipelines"
 CREATION_METHOD = "FabricDataPipelines.Actions"
 CONNECTION_PARAMETERS: list[dict] = []
 
 # Variable library settings
 VARIABLE_LIBRARY_NAME = "benchmark_1_variables"
-NOTEBOOK_NAME = "pyspark_benchmark"
+NOTEBOOK_NAMES = ["pyspark_benchmark", "polars_benchmark", "duckdb_benchmark", "pandas_benchmark"]
 
 # METADATA ********************
 
@@ -542,28 +550,29 @@ logger.info("Connection GUID: %s", connection_id)
 
 # MARKDOWN ********************
 
-# ## Step 4 (Optional): Update variable library with notebook GUID
+# ## Step 4: Update variable library
 # 
-# Looks up a notebook by name in the workspace and writes its GUID into the
-# variable library so pipelines can reference it.
+# Builds a dict of all variables to set — workspace name, connection GUID, and
+# each notebook GUID — then writes them all in a single API call.
 
 # CELL ********************
 
-notebook_id = workspace.get_item_id(NOTEBOOK_NAME, item_type="Notebook")
-logger.info("Notebook GUID: %s", notebook_id)
+# Build the full set of variable updates
+variable_updates: dict[str, str] = {
+    "workspace_name": CURRENT_WORKSPACE_NAME,
+    "execute_pipeline_connection_id": connection_id,
+}
 
-# METADATA ********************
+for notebook_name in NOTEBOOK_NAMES:
+    notebook_id = workspace.get_item_id(notebook_name, item_type="Notebook")
+    variable_updates[f"{notebook_name}_notebook_id"] = notebook_id
 
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
+logger.info("Variables to update: %s", list(variable_updates.keys()))
 
-# CELL ********************
-
+# Write all variables in a single read-update-write cycle
 var_lib = FabricVariableLibrary(client, current_workspace_id)
 library_id = var_lib.find_library(VARIABLE_LIBRARY_NAME)
-var_lib.update_variable(library_id, f"{NOTEBOOK_NAME}_notebook_id", notebook_id)
+var_lib.update_variables(library_id, variable_updates)
 
 # METADATA ********************
 

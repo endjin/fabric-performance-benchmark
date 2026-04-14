@@ -18,7 +18,7 @@ For detailed analysis, see our blog post: [Fabric Performance Benchmarking](http
 Before you begin, ensure you have:
 
 1. **GitHub Account** — to fork the repository and enable Git integration with Fabric
-2. **Microsoft Fabric Capacity** — an active Fabric capacity (F2 or above recommended) with permissions to create workspaces
+2. **Microsoft Fabric Capacity** — an active Fabric capacity (**F32 or above**) with permissions to create workspaces. The largest default benchmark configuration (Python Notebook with 64 vCores) consumes 32 CUs per second. See [Capacity Requirements](#capacity-requirements) for details. You can run on smaller capacities by reducing the benchmark configurations — see [Scaling Back the Benchmarks](#scaling-back-the-benchmarks)
 3. **Fabric Workspace Admin** — permissions to create and configure workspaces
 
 ## Repository Structure
@@ -32,22 +32,31 @@ fabric-performance-benchmark/
 │   │   │   ├── benchmark_analytics.Report      # Power BI report
 │   │   │   └── *.SemanticModel                 # Power BI semantic model
 │   │   ├── benchmark_notebooks/
+│   │   │   ├── benchmark_1_variables.VariableLibrary  # Pipeline & notebook configuration
 │   │   │   ├── duckdb_benchmark.Notebook       # DuckDB implementation
+│   │   │   ├── helper_methods.Notebook         # Shared helpers for Python benchmarks
+│   │   │   ├── helper_methods_pyspark.Notebook # Shared helpers for Spark benchmarks
 │   │   │   ├── pandas_benchmark.Notebook       # Pandas implementation
 │   │   │   ├── polars_benchmark.Notebook       # Polars implementation
 │   │   │   └── pyspark_benchmark.Notebook      # PySpark implementation
 │   │   ├── orchestrate_python_benchmark/
+│   │   │   ├── child_pipelines/                # Sub-pipelines for iterations & vCores
 │   │   │   └── run_benchmarks.DataPipeline     # Orchestrate Python benchmarks
 │   │   ├── orchestrate_spark_benchmark/
+│   │   │   ├── child_pipelines/                # Sub-pipelines for iterations & configs
 │   │   │   └── run_spark_benchmarks.DataPipeline # Orchestrate Spark benchmarks
+│   │   ├── sandpit/                            # Experimental notebooks
 │   │   └── set_up/
+│   │       ├── configure_workspace.Notebook    # Configure workspace identity & connections
 │   │       └── download_data.Notebook          # Download source data
 │   └── fabric_performance_benchmark_lakehouse.Lakehouse
 ├── notebooks/
-│   ├── analysis_of_results.ipynb               # Local analysis notebook
+│   ├── configure_workspace.ipynb               # Local version of workspace setup
+│   ├── fabric-benchmarking-part-1.ipynb        # Local analysis notebook
 │   └── fabric-benchmarking-part-1.md           # Blog content
 └── src/
-    └── onelake_tools/                          # Helper utilities
+    ├── fabric_admin/                           # Fabric REST API client library
+    └── onelake_tools/                          # OneLake helper utilities
 ```
 
 ## Getting Started
@@ -65,7 +74,7 @@ fabric-performance-benchmark/
 2. Click **Workspaces** in the left navigation pane
 3. Click **+ New workspace**
 4. Enter the workspace name: `fabric_performance_benchmark_workspace`
-   > **Note**: The default name matches the configuration in the benchmark notebooks. If you use a different name, you'll need to update the `workspace_name` variable in the variable library.
+   > **Note**: You can choose a different workspace name. The `configure_workspace` notebook will update the `workspace_name` variable in the variable library.
 5. Expand **Advanced** and select your Fabric capacity
 6. Click **Apply**
 
@@ -83,8 +92,6 @@ fabric-performance-benchmark/
 
 Fabric will import all items from the repository into your workspace. This may take a few minutes.
 
-> **Important**: After syncing, Fabric assigns new IDs to all items (notebooks, pipelines, etc.). The Data Factory pipelines reference notebook IDs via **Item Reference** variables in the `benchmark_1_variables` Variable Library, so these will resolve automatically once the Variable Library is updated. However, child pipeline references within the orchestration pipelines may still need to be re-linked — open each pipeline and verify the child pipeline references resolve correctly, re-selecting them from the dropdowns if needed.
-
 ### 4. Configure the Lakehouse
 
 After syncing, verify the lakehouse is correctly configured:
@@ -93,7 +100,22 @@ After syncing, verify the lakehouse is correctly configured:
 2. The lakehouse should be empty initially — this is expected
 3. The benchmark notebooks will write data to this lakehouse
 
-### 5. Download Source Data
+### 5. Configure the Workspace
+
+This step provisions a workspace identity, grants it contributor access, creates a shared cloud connection for pipeline orchestration, and writes notebook GUIDs and connection details into the variable library.
+
+1. Navigate to **set_up** folder in your workspace
+2. Open **configure_workspace** notebook
+3. Run all cells
+4. Verify the output confirms:
+   - Workspace identity provisioned (or already exists)
+   - Contributor role assigned
+   - Shared cloud connection created (or found existing)
+   - Variable library updated with notebook IDs and connection GUID
+
+> **Note**: This notebook must be run before the benchmark pipelines. The pipelines depend on the connection GUID and notebook IDs stored in the `benchmark_1_variables` variable library. If you re-sync from Git, you may need to re-run this notebook as Fabric assigns new item IDs.
+
+### 6. Download Source Data
 
 The benchmark uses UK Land Registry house price data (1995-present, ~30 million rows, ~5GB).
 
@@ -105,31 +127,39 @@ The benchmark uses UK Land Registry house price data (1995-present, ~30 million 
 
 > **Note**: Download times depend on the `number_of_years` setting and network speed. The full 30-year dataset may take 10-15 minutes.
 
-### 6. Run the Benchmarks
+### 7. Run the Benchmarks
 
-The benchmarks are orchestrated via Data Factory pipelines that run each engine across multiple configurations. Each pipeline runs the benchmark notebooks multiple times to collect statistically meaningful results.
+The benchmarks are orchestrated via Data Factory pipelines that run each engine across multiple configurations. Each pipeline iterates through its configurations **sequentially** (not in parallel), running 3 iterations per configuration to collect statistically meaningful results. Each pipeline takes several hours to complete.
+
+> **Important**: Run the two pipelines **in series** (one after the other), not at the same time, to avoid exceeding your Fabric capacity limits.
 
 #### Run Spark Benchmarks
 
 1. Navigate to **orchestrate_spark_benchmark** folder
 2. Open **run_spark_benchmarks** pipeline
-3. Click **Run**
-4. Monitor progress in the pipeline run view
+3. Review the default parameters:
+   - `configurations_to_run` — array of 6 Spark configurations (see [Spark Notebook Configurations](#spark-notebook-configurations))
+   - `iterations` — number of runs per configuration (default: `3`)
+4. Click **Run** and wait for the pipeline to complete before starting the Python benchmarks
+5. Monitor progress in the pipeline run view or the Monitoring hub
 
-The Spark pipeline tests PySpark across various executor configurations (1-4 executors, different vCore/memory combinations).
+The Spark pipeline tests PySpark across various executor configurations (1-4 executors, with 4/4 and 8/8 vCore/memory combinations). The largest configuration (8/8 vCores, 4 executors) consumes 20 CUs per second.
 
 #### Run Python Benchmarks
 
 1. Navigate to **orchestrate_python_benchmark** folder
 2. Open **run_benchmarks** pipeline
-3. Click **Run**
-4. Monitor progress in the pipeline run view
+3. Review the default parameters:
+   - `vcores_to_run` — array of vCore sizes (default: `[2, 4, 8, 16, 32, 64]`)
+   - `iterations` — number of runs per configuration (default: `3`)
+4. Click **Run**
+5. Monitor progress in the pipeline run view or the Monitoring hub
 
-The Python pipeline tests Pandas, Polars, and DuckDB across various Python Notebook configurations (2-32 vCores).
+The Python pipeline tests Polars, DuckDB, and Pandas across each vCore configuration. The largest configuration (64 vCores) consumes 32 CUs per second.
 
-> **Note**: Running all benchmarks takes several hours. Spark benchmarks include cluster spin-up time (~3 minutes per run). Python Notebook benchmarks are faster to provision (~30 seconds for default configuration).
+> **Note**: Each pipeline takes several hours to run due to sequential execution. Spark benchmarks include cluster spin-up time (~3 minutes per run). Python Notebook benchmarks are faster to provision (~30 seconds for the default 2 vCore configuration).
 
-### 7. Analyse Results
+### 8. Analyse Results
 
 After the benchmarks complete, process the raw data:
 
@@ -143,7 +173,7 @@ After the benchmarks complete, process the raw data:
 
 The notebook writes processed data to the `benchmark_repository/benchmark_analytics` Delta table.
 
-### 8. View the Report
+### 9. View the Report
 
 1. Navigate to **analysis_of_results** folder
 2. Click the **Benchmark Analytics** semantic model (the name may appear as a GUID in the file explorer — look for the item with type **Semantic Model**)
@@ -202,7 +232,11 @@ You can run the analysis notebook locally on your machine, which provides access
 
 ## Benchmark Configurations
 
+The benchmark pipelines test each engine across multiple compute configurations. These are defined as pipeline parameters and can be customised before each run.
+
 ### Python Notebook Configurations
+
+Configured via the `vcores_to_run` parameter on the **run_benchmarks** pipeline. Each Python Notebook runs on a single compute node. Fabric allocates memory proportionally to the vCore count.
 
 | CUs Per Second | vCores | RAM    |
 | -------------- | ------ | ------ |
@@ -215,6 +249,8 @@ You can run the analysis notebook locally on your machine, which provides access
 
 ### Spark Notebook Configurations
 
+Configured via the `configurations_to_run` parameter on the **run_spark_benchmarks** pipeline. Each Spark session has a dedicated driver node plus one or more executor nodes. CU consumption is calculated as: **total vCores ÷ 2**, where total vCores = driver_cores + (executor_cores × executor_number).
+
 | CUs Per Second | Executors | vCores (Driver/Executor) | RAM (Driver/Executor) |
 | -------------- | --------- | ------------------------ | --------------------- |
 | 4              | 1         | 4/4                      | 28G/28G               |
@@ -223,6 +259,32 @@ You can run the analysis notebook locally on your machine, which provides access
 | 10             | 4         | 4/4                      | 28G/28G               |
 | 12             | 2         | 8/8                      | 56G/56G               |
 | 20             | 4         | 8/8                      | 56G/56G               |
+
+### Capacity Requirements
+
+In Fabric, each Capacity Unit (CU) provides 2 Spark vCores. A running notebook consumes CUs for the duration of its session.
+
+The **largest default Python configuration** (64 vCores) consumes **32 CUs per second**, making **F32** the minimum Fabric SKU required to run all benchmarks as configured. The largest Spark configuration (8/8 vCores, 4 executors = 40 total vCores) consumes 20 CUs per second, which fits within F32.
+
+| SKU | Capacity Units | Max Spark vCores | Can run all defaults? |
+| --- | -------------- | ---------------- | --------------------- |
+| F2  | 2              | 4                | No                    |
+| F4  | 4              | 8                | No                    |
+| F8  | 8              | 16               | No                    |
+| F16 | 16             | 32               | No                    |
+| F32 | 32             | 64               | Yes                   |
+| F64 | 64             | 128              | Yes                   |
+
+> **Note**: Fabric applies a 3x burst multiplier for Spark workloads, so the sustained CU consumption matters more than peak vCores. The critical constraint is that the CU consumption of a single benchmark run must not exceed your capacity's CU count.
+
+### Scaling Back the Benchmarks
+
+If your Fabric capacity is smaller than F32, you can reduce the benchmark configurations to fit:
+
+- **Pipeline**: `run_benchmarks` — edit the `vcores_to_run` parameter to remove larger vCore sizes. For example, `[2, 4, 8, 16]` requires only F16
+- **Pipeline**: `run_spark_benchmarks` — edit the `configurations_to_run` parameter to remove higher-CU configurations. For example, removing the 4-executor configurations reduces the maximum to 12 CUs (F16)
+
+You can also reduce the `iterations` parameter (default: `3`) to shorten overall run time, though fewer iterations may reduce the statistical reliability of the results.
 
 ## Data Attribution
 
@@ -247,7 +309,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 | **Pipelines show "item not found" errors** | After syncing from Git, Fabric assigns new IDs. Notebook references are resolved automatically via the Variable Library's Item Reference variables. For child pipeline references, open each pipeline and re-select them from the dropdowns. |
 | **Notebooks can't find the lakehouse** | Open each notebook and re-attach the default lakehouse (`fabric_performance_benchmark_lakehouse`) via the lakehouse explorer panel. |
 | **Variable library errors** | Ensure the `benchmark_1_variables` variable library exists in the workspace and contains `workspace_name`, `lakehouse_name`, `raw_data_relative_path`, and the notebook Item Reference variables (`polars_benchmark`, `duckdb_benchmark`, `pandas_benchmark`, `pyspark_benchmark`). After syncing from Git, verify the Item Reference variables point to the correct notebook IDs in your workspace. |
-| **Spark benchmarks fail with capacity errors** | Larger Spark configurations (4 executors, 8/8 vCores) require substantial Fabric capacity (F16+). Start with smaller configurations or reduce the `configurations_to_run` parameter. |
+| **Spark benchmarks fail with capacity errors** | The full set of default configurations requires F32 capacity. Start with smaller configurations or reduce the `configurations_to_run` and `vcores_to_run` parameters. See [Scaling Back the Benchmarks](#scaling-back-the-benchmarks). |
 | **Download notebook fails** | The Land Registry S3 endpoint may be temporarily unavailable. Retry after a few minutes. |
 
 ## License
