@@ -132,6 +132,20 @@ notebook_id
 
 # MARKDOWN ********************
 
+
+# CELL ********************
+
+notebook_id = '678955e4-c646-42aa-825c-e8b4a44524dd'
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
 # ## Update variable in Fabric variable library
 # 
 # Now trying to update a variable in a Fabric Variable Library with the notebook_id.  This ID is referenced by pipelines in the solution which orchestrate running the notebook.
@@ -191,7 +205,7 @@ if response.status_code == 200:
     definition_response = response
 elif response.status_code == 202:
     # Long-running operation — poll the Location URL
-    location = response.headers.get("Location")
+    location = response.headers.get("location")
     operation_id = response.headers.get("x-ms-operation-id")
     logger.debug(f"Async operation started. Operation ID: {operation_id}")
     logger.debug(f"Location URL: {location}")
@@ -202,13 +216,13 @@ elif response.status_code == 202:
     logger.debug(f"Completed operation body: {json.dumps(operation_body, indent=2)}")
     
     # Fetch the actual result from the operation's resource location
-    resource_location = operation_body.get("resourceLocation")
-    if resource_location:
-        logger.debug(f"Fetching result from resourceLocation: {resource_location}")
-        definition_response = requests.get(resource_location, headers=headers)
+    result_location = operation_response.headers.get("location")
+    if result_location:
+        logger.debug(f"Fetching result from location: {result_location}")
+        definition_response = requests.get(result_location, headers=headers)
         logger.debug(f"Result HTTP status: {definition_response.status_code}")
     else:
-        logger.warning("No resourceLocation in operation response, using operation response as-is")
+        logger.warning("No location in operation response, using operation response as-is")
         definition_response = operation_response
 else:
     raise Exception(f"Unexpected status {response.status_code}: {response.text}")
@@ -324,6 +338,16 @@ elif update_response.status_code == 200:
     print(f"✓ Variable library updated successfully. '{variable_name_to_update}' = '{notebook_id}'")
 else:
     raise Exception(f"Update failed with status {update_response.status_code}: {update_response.text}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
 
 # METADATA ********************
 
