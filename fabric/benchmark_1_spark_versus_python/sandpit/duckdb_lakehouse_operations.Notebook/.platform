@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "duckdb_lakehouse_operations"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2174bb82-2c52-8534-423a-f8d1a2ac355b"
+  }
+}
