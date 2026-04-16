@@ -85,6 +85,13 @@
       "timestamp": {
         "type": "String"
       }
+    },
+    "libraryVariables": {
+      "benchmark_1_variables_execute_pipeline_connection_id": {
+        "type": "String",
+        "variableName": "execute_pipeline_connection_id",
+        "libraryName": "benchmark_1_variables"
+      }
     }
   }
 }
