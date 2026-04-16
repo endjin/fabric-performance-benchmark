@@ -33,6 +33,27 @@
 # 
 # This notebook runs **inside Fabric** and uses `notebookutils` for authentication and workspace context.
 
+# MARKDOWN ********************
+
+# ## Configuration
+# **Important**: Paste the Connection ID (GUID) from the cloud connection you created
+# via [Power BI Gateway Management](https://app.powerbi.com/groups/me/gateways) into the
+# `CONNECTION_ID` variable below before running.
+
+# CELL ********************
+
+# Paste the Connection ID (GUID) from the cloud connection you created manually
+# via https://app.powerbi.com/groups/me/gateways
+CONNECTION_ID = ""  # e.g. "12dfc5c1-8a87-4c8a-84bc-cf1d1984a6e1"
+assert CONNECTION_ID, "Please set CONNECTION_ID to the GUID of your cloud connection before running."
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
 # CELL ********************
 
 import base64
@@ -273,26 +294,18 @@ class FabricVariableLibrary:
 
 # MARKDOWN ********************
 
-# ## Configuration
+# ## Setup
 # 
-# **Important**: Paste the Connection ID (GUID) from the cloud connection you created
-# via [Power BI Gateway Management](https://app.powerbi.com/groups/me/gateways) into the
-# `CONNECTION_ID` variable below before running.
+# Setup the parameters which drive the behaviour of the notebook.
 
 # CELL ********************
 
 # Workspace details
 CURRENT_WORKSPACE_NAME = notebookutils.runtime.context.get('currentWorkspaceName')
 
-# Paste the Connection ID (GUID) from the cloud connection you created manually
-# via https://app.powerbi.com/groups/me/gateways
-CONNECTION_ID = ""  # e.g. "12dfc5c1-8a87-4c8a-84bc-cf1d1984a6e1"
-
 # Variable library settings
 VARIABLE_LIBRARY_NAME = "benchmark_1_variables"
 NOTEBOOK_NAMES = ["pyspark_benchmark", "polars_benchmark", "duckdb_benchmark", "pandas_benchmark"]
-
-assert CONNECTION_ID, "Please set CONNECTION_ID to the GUID of your cloud connection before running."
 
 # METADATA ********************
 
