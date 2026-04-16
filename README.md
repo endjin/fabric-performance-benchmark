@@ -47,7 +47,7 @@ fabric-performance-benchmark/
 │   │   │   └── run_spark_benchmarks.DataPipeline # Orchestrate Spark benchmarks
 │   │   ├── sandpit/                            # Experimental notebooks
 │   │   └── set_up/
-│   │       ├── configure_workspace.Notebook    # Configure workspace identity & connections
+│   │       ├── configure_workspace.Notebook    # Update variable library with notebook & connection IDs
 │   │       └── download_data.Notebook          # Download source data
 │   └── fabric_performance_benchmark_lakehouse.Lakehouse
 ├── notebooks/
@@ -100,22 +100,31 @@ After syncing, verify the lakehouse is correctly configured:
 2. The lakehouse should be empty initially — this is expected
 3. The benchmark notebooks will write data to this lakehouse
 
-### 5. Configure the Workspace
+### 5. Create a Cloud Connection
 
-This step provisions a workspace identity, grants it contributor access, creates a shared cloud connection for pipeline orchestration, and writes notebook GUIDs and connection details into the variable library.
+The benchmark pipelines use a shared cloud connection to trigger notebooks. You must create this connection manually.
+
+1. Go to [Power BI Gateway Management](https://app.powerbi.com/groups/me/gateways)
+2. Click **+ New** to create a new connection
+3. Set the connection type to **Fabric Data Pipelines**
+4. Name it something descriptive (e.g. "Fabric Data Pipelines - Benchmark")
+5. Complete the creation wizard
+6. Once created, copy the **Connection ID** (GUID) from the connection details — you will need this in the next step
+
+### 6. Configure the Workspace
+
+This step writes the cloud connection GUID and notebook IDs into the variable library so the benchmark pipelines can reference them.
 
 1. Navigate to **set_up** folder in your workspace
 2. Open **configure_workspace** notebook
-3. Run all cells
-4. Verify the output confirms:
-   - Workspace identity provisioned (or already exists)
-   - Contributor role assigned
-   - Shared cloud connection created (or found existing)
-   - Variable library updated with notebook IDs and connection GUID
+3. Paste the **Connection ID** (GUID) from the previous step into the `CONNECTION_ID` variable
+4. Run all cells
+5. Verify the output confirms:
+   - Variable library updated with the connection GUID and notebook IDs
 
 > **Note**: This notebook must be run before the benchmark pipelines. The pipelines depend on the connection GUID and notebook IDs stored in the `benchmark_1_variables` variable library. If you re-sync from Git, you may need to re-run this notebook as Fabric assigns new item IDs.
 
-### 6. Download Source Data
+### 7. Download Source Data
 
 The benchmark uses UK Land Registry house price data (1995-present, ~30 million rows, ~5GB).
 
@@ -127,7 +136,7 @@ The benchmark uses UK Land Registry house price data (1995-present, ~30 million 
 
 > **Note**: Download times depend on the `number_of_years` setting and network speed. The full 30-year dataset may take 10-15 minutes.
 
-### 7. Run the Benchmarks
+### 8. Run the Benchmarks
 
 The benchmarks are orchestrated via Data Factory pipelines that run each engine across multiple configurations. Each pipeline iterates through its configurations **sequentially** (not in parallel), running 3 iterations per configuration to collect statistically meaningful results. Each pipeline takes several hours to complete.
 
@@ -159,7 +168,7 @@ The Python pipeline tests Polars, DuckDB, and Pandas across each vCore configura
 
 > **Note**: Each pipeline takes several hours to run due to sequential execution. Spark benchmarks include cluster spin-up time (~3 minutes per run). Python Notebook benchmarks are faster to provision (~30 seconds for the default 2 vCore configuration).
 
-### 8. Analyse Results
+### 9. Analyse Results
 
 After the benchmarks complete, process the raw data:
 
@@ -173,7 +182,7 @@ After the benchmarks complete, process the raw data:
 
 The notebook writes processed data to the `benchmark_repository/benchmark_analytics` Delta table.
 
-### 9. View the Report
+### 10. View the Report
 
 1. Navigate to **analysis_of_results** folder
 2. Click the **Benchmark Analytics** semantic model (the name may appear as a GUID in the file explorer — look for the item with type **Semantic Model**)

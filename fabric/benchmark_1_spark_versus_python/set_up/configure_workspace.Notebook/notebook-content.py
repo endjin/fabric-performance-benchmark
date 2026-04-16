@@ -12,14 +12,24 @@
 
 # MARKDOWN ********************
 
-# # Configure Workspace Identity and Connection
+# # Configure Workspace
 # 
 # This notebook configures the current Fabric workspace for the benchmarking solution:
 # 
-# 1. **Provision workspace identity** — creates a managed service principal for the workspace
-# 2. **Grant contributor access** — assigns the workspace identity the Contributor role
-# 3. **Create shared cloud connection** — creates a "Fabric Data Pipelines (Workspace Identity)" connection
-# 4. **Update variable library** — writes the notebook GUID and connection GUID into the variable library
+# 1. **Create a cloud connection** (manual step — must be done before running this notebook)
+# 2. **Update variable library** — writes the connection GUID and notebook GUIDs into the variable library
+# 
+# ## Prerequisites: Create a Cloud Connection
+# 
+# Before running this notebook, you must manually create a shared cloud connection:
+# 
+# 1. Go to [Power BI Gateway Management](https://app.powerbi.com/groups/me/gateways)
+# 2. Click **+ New** to create a new connection
+# 3. Set the connection type to **Fabric Data Pipelines**
+# 4. Name it something descriptive (e.g. "Fabric Data Pipelines - Benchmark")
+# 5. Complete the creation wizard
+# 6. Once created, copy the **Connection ID** (GUID) from the connection details
+# 7. Paste the GUID into the `CONNECTION_ID` variable in the Configuration cell below
 # 
 # This notebook runs **inside Fabric** and uses `notebookutils` for authentication and workspace context.
 
@@ -160,83 +170,6 @@ class FabricWorkspace:
     def workspace_id(self) -> str:
         return self._workspace_id
 
-    def provision_identity(self) -> dict | None:
-        url = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/provisionIdentity"
-        logger.info("Provisioning workspace identity for workspace %s", self.workspace_id)
-        response = self._client.post(url)
-
-        if response.status_code == 200:
-            identity = response.json()
-            logger.info("Workspace identity provisioned — applicationId=%s, servicePrincipalId=%s",
-                        identity.get("applicationId"), identity.get("servicePrincipalId"))
-            return identity
-
-        if response.status_code == 202:
-            location = response.headers.get("Location")
-            if not location:
-                raise RuntimeError("202 response missing Location header for LRO polling")
-            logger.info("Workspace identity provisioning accepted — polling LRO")
-            operation_response = self._client.poll_long_running_operation(location)
-            result_location = operation_response.headers.get("Location")
-            if result_location:
-                identity = self._client.get(result_location).json()
-            else:
-                identity = operation_response.json()
-            logger.info("Workspace identity provisioned — applicationId=%s, servicePrincipalId=%s",
-                        identity.get("applicationId"), identity.get("servicePrincipalId"))
-            return identity
-
-        error_body = response.json() if response.content else {}
-        error_code = error_body.get("errorCode", "")
-        message = error_body.get("message", "")
-        if "already" in error_code.lower() or "already" in message.lower() or "exist" in message.lower():
-            logger.info("Workspace identity already exists (HTTP %s)", response.status_code)
-            return None
-        raise RuntimeError(f"Failed to provision workspace identity (HTTP {response.status_code}): "
-                           f"{json.dumps(error_body, indent=2)}")
-
-    def list_role_assignments(self) -> list[dict]:
-        url = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/roleAssignments"
-        logger.debug("Listing role assignments for workspace %s", self.workspace_id)
-        response = self._client.get(url)
-        response.raise_for_status()
-        assignments = response.json().get("value", [])
-        logger.debug("Found %d role assignments", len(assignments))
-        return assignments
-
-    def add_role_assignment(self, principal_id: str, principal_type: str = "ServicePrincipal",
-                            role: str = "Contributor") -> None:
-        assignments = self.list_role_assignments()
-        for assignment in assignments:
-            principal = assignment.get("principal", {})
-            if principal.get("id") == principal_id and principal.get("type") == principal_type:
-                logger.info("Principal %s already has role '%s' — skipping", principal_id, assignment.get("role"))
-                return
-
-        url = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/roleAssignments"
-        payload = {"principal": {"id": principal_id, "type": principal_type}, "role": role}
-        logger.info("Adding %s role for %s (%s)", role, principal_id, principal_type)
-        response = self._client.post(url, json_body=payload)
-        if response.status_code == 201:
-            logger.info("Role assignment created successfully")
-        else:
-            error_body = response.json() if response.content else {}
-            raise RuntimeError(f"Failed to create role assignment (HTTP {response.status_code}): "
-                               f"{json.dumps(error_body, indent=2)}")
-
-    def ensure_identity_with_contributor_access(self) -> dict | None:
-        identity = self.provision_identity()
-        if identity is None:
-            logger.warning("Workspace identity already existed — cannot determine service principal ID. "
-                           "Verify contributor access manually in workspace settings.")
-            return None
-        sp_id = identity.get("servicePrincipalId")
-        if sp_id:
-            self.add_role_assignment(sp_id, principal_type="ServicePrincipal", role="Contributor")
-        else:
-            logger.warning("No servicePrincipalId in identity response — cannot assign role")
-        return identity
-
     def get_item_id(self, item_name: str, item_type: str) -> str:
         url = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/items?type={item_type}"
         logger.info("Looking up %s '%s' in workspace %s", item_type, item_name, self.workspace_id)
@@ -251,116 +184,6 @@ class FabricWorkspace:
                     return item_id
             url = body.get("continuationUri")
         raise ValueError(f"{item_type} '{item_name}' not found in workspace {self.workspace_id}")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Connection operations
-# 
-# Adapted from `src/fabric_admin/connections.py`.
-
-# CELL ********************
-
-class FabricConnections:
-    """Create and discover Fabric shared cloud connections."""
-
-    def __init__(self, client: FabricRestClient):
-        self._client = client
-
-    def list_supported_types(self) -> list[dict]:
-        base_url = f"{FABRIC_API_BASE}/v1/connections/supportedConnectionTypes"
-        logger.info("Fetching supported connection types")
-        all_types: list[dict] = []
-        url: str | None = base_url
-        while url:
-            response = self._client.get(url)
-            response.raise_for_status()
-            body = response.json()
-            all_types.extend(body.get("value", []))
-            continuation = body.get("continuationToken")
-            url = f"{base_url}?continuationToken={continuation}" if continuation else None
-        logger.info("Found %d supported connection types", len(all_types))
-        return all_types
-
-    def find_connection_type(self, keywords: list[str],
-                              credential_type: str = "WorkspaceIdentity") -> list[dict]:
-        all_types = self.list_supported_types()
-        matches: list[dict] = []
-        for ct in all_types:
-            type_name = ct.get("type", "")
-            supported_creds = ct.get("supportedCredentialTypes", [])
-            if credential_type not in supported_creds:
-                continue
-            if any(kw.lower() in type_name.lower() for kw in keywords):
-                matches.append(ct)
-                logger.info("Matched connection type '%s' (credentials: %s)", type_name, supported_creds)
-                for method in ct.get("creationMethods", []):
-                    logger.info("  Creation method '%s', parameters: %s",
-                                method["name"], json.dumps(method.get("parameters", []), indent=2))
-        if not matches:
-            logger.warning("No types matched keywords=%s with credential_type='%s'. "
-                           "Listing all types that support '%s':", keywords, credential_type, credential_type)
-            for ct in all_types:
-                if credential_type in ct.get("supportedCredentialTypes", []):
-                    logger.info("  %s", ct["type"])
-        return matches
-
-    def create_cloud_connection(self, display_name: str, connection_type: str, creation_method: str,
-                                 parameters: list[dict] | None = None,
-                                 credential_type: str = "WorkspaceIdentity",
-                                 privacy_level: str = "Organizational") -> str:
-        url = f"{FABRIC_API_BASE}/v1/connections"
-        payload = {
-            "connectivityType": "ShareableCloud",
-            "displayName": display_name,
-            "connectionDetails": {
-                "type": connection_type, "creationMethod": creation_method,
-                "parameters": parameters or [],
-            },
-            "privacyLevel": privacy_level,
-            "credentialDetails": {
-                "singleSignOnType": "None", "connectionEncryption": "NotEncrypted",
-                "skipTestConnection": False,
-                "credentials": {"credentialType": credential_type},
-            },
-        }
-        logger.info("Creating cloud connection '%s' (type=%s, credential=%s)",
-                     display_name, connection_type, credential_type)
-        response = self._client.post(url, json_body=payload)
-        if response.status_code == 201:
-            connection_id = response.json()["id"]
-            logger.info("Connection created — id=%s", connection_id)
-            return connection_id
-        error_body = response.json() if response.content else {}
-        error_code = error_body.get("errorCode", "")
-        message = error_body.get("message", "")
-        if "duplicate" in error_code.lower() or "duplicate" in message.lower() or "already" in message.lower():
-            logger.info("Connection '%s' already exists — looking up existing GUID", display_name)
-            existing_id = self.find_connection_by_name(display_name)
-            if existing_id:
-                return existing_id
-            raise RuntimeError(f"Connection '{display_name}' reported as duplicate but could not be found")
-        raise RuntimeError(f"Failed to create connection (HTTP {response.status_code}): "
-                           f"{json.dumps(error_body, indent=2)}")
-
-    def find_connection_by_name(self, display_name: str) -> str | None:
-        url = f"{FABRIC_API_BASE}/v1/connections"
-        logger.debug("Listing connections to find '%s'", display_name)
-        response = self._client.get(url)
-        response.raise_for_status()
-        for conn in response.json().get("value", []):
-            if conn.get("displayName") == display_name:
-                conn_id = conn["id"]
-                logger.info("Found existing connection '%s' → %s", display_name, conn_id)
-                return conn_id
-        logger.warning("Connection '%s' not found", display_name)
-        return None
 
 # METADATA ********************
 
@@ -451,21 +274,25 @@ class FabricVariableLibrary:
 # MARKDOWN ********************
 
 # ## Configuration
+# 
+# **Important**: Paste the Connection ID (GUID) from the cloud connection you created
+# via [Power BI Gateway Management](https://app.powerbi.com/groups/me/gateways) into the
+# `CONNECTION_ID` variable below before running.
 
 # CELL ********************
 
 # Workspace details
 CURRENT_WORKSPACE_NAME = notebookutils.runtime.context.get('currentWorkspaceName')
 
-# Connection settings
-CONNECTION_DISPLAY_NAME = f"Fabric Data Pipelines (Workspace Identity) - {CURRENT_WORKSPACE_NAME}"
-CONNECTION_TYPE = "FabricDataPipelines"
-CREATION_METHOD = "FabricDataPipelines.Actions"
-CONNECTION_PARAMETERS: list[dict] = []
+# Paste the Connection ID (GUID) from the cloud connection you created manually
+# via https://app.powerbi.com/groups/me/gateways
+CONNECTION_ID = ""  # e.g. "12dfc5c1-8a87-4c8a-84bc-cf1d1984a6e1"
 
 # Variable library settings
 VARIABLE_LIBRARY_NAME = "benchmark_1_variables"
 NOTEBOOK_NAMES = ["pyspark_benchmark", "polars_benchmark", "duckdb_benchmark", "pandas_benchmark"]
+
+assert CONNECTION_ID, "Please set CONNECTION_ID to the GUID of your cloud connection before running."
 
 # METADATA ********************
 
@@ -496,79 +323,17 @@ workspace = FabricWorkspace(client, current_workspace_id)
 
 # MARKDOWN ********************
 
-# ## Step 1 & 2: Provision workspace identity with contributor access
+# ## Update variable library
 # 
-# Creates a workspace identity (managed service principal) and assigns it the Contributor role.
-# Both operations are idempotent — safe to re-run.
-
-# CELL ********************
-
-identity = workspace.ensure_identity_with_contributor_access()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Step 3: Discover connection types and create shared cloud connection
-
-# CELL ********************
-
-connections = FabricConnections(client)
-
-# Discover pipeline-related connection types that support WorkspaceIdentity
-candidates = connections.find_connection_type(
-    keywords=["pipeline", "datafactory", "fabricdatapipeline", "datapipeline"],
-    credential_type="WorkspaceIdentity",
-)
-
-for ct in candidates:
-    for method in ct.get("creationMethods", []):
-        logger.info("Candidate: type=%s, creationMethod=%s, params=%s",
-                     ct["type"], method["name"], method.get("parameters", []))
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
-# Create (or find existing) shared cloud connection
-connection_id = connections.create_cloud_connection(
-    display_name=CONNECTION_DISPLAY_NAME,
-    connection_type=CONNECTION_TYPE,
-    creation_method=CREATION_METHOD,
-    parameters=CONNECTION_PARAMETERS,
-)
-logger.info("Connection GUID: %s", connection_id)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# MARKDOWN ********************
-
-# ## Step 4: Update variable library
-# 
-# Builds a dict of all variables to set — workspace name, connection GUID, and
-# each notebook GUID — then writes them all in a single API call.
+# Writes the connection GUID (from the manually-created cloud connection), workspace name,
+# and each benchmark notebook's GUID into the variable library so that pipelines can reference them.
 
 # CELL ********************
 
 # Build the full set of variable updates
 variable_updates: dict[str, str] = {
     "workspace_name": CURRENT_WORKSPACE_NAME,
-    "execute_pipeline_connection_id": connection_id,
+    "execute_pipeline_connection_id": CONNECTION_ID,
 }
 
 for notebook_name in NOTEBOOK_NAMES:
