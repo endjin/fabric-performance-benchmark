@@ -40,6 +40,7 @@
             "value": "@pipeline().parameters.notebook_id",
             "type": "Expression"
           },
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
           "parameters": {
             "run_timestamp": {
               "value": {
