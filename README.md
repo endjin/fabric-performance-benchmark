@@ -114,6 +114,7 @@ This step writes the cloud connection GUID and notebook IDs into the variable li
 4. Run all cells
 5. Verify the output confirms:
    - Variable library updated with the connection GUID and notebook IDs
+   - Semantic model repointed to the lakehouse in this workspace
 
 > **Note**: This notebook must be run before the benchmark pipelines. The pipelines depend on the connection GUID and notebook IDs stored in the `benchmark_1_variables` variable library. If you re-sync from Git, you may need to re-run this notebook as Fabric assigns new item IDs.
 
