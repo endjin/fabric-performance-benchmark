@@ -346,6 +346,7 @@ workspace = FabricWorkspace(client, current_workspace_id)
 # Build the full set of variable updates
 variable_updates: dict[str, str] = {
     "workspace_name": CURRENT_WORKSPACE_NAME,
+    "workspace_id": current_workspace_id,
     "execute_pipeline_connection_id": CONNECTION_ID,
 }
 
