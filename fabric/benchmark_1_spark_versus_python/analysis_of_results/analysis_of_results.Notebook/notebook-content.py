@@ -381,6 +381,7 @@ benchmarks = (
     benchmarks
     .sort(["run_timestamp", "order"])
     .with_columns(
+        pl.col("stage_time").dt.replace_time_zone("UTC"),
         pl.col("stage_time_delta")
         .cum_sum()
         .over(["platform", "configuration", "workload_name", "run_timestamp"])

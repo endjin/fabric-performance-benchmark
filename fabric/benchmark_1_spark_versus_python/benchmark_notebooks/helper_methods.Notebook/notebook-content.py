@@ -36,6 +36,7 @@ def export_with_polars(manager):
         records.sort("stage_time", descending=False)
         .with_row_index("order", offset=1)
         .with_columns(
+            pl.col("stage_time").dt.replace_time_zone("UTC"),
             (pl.col("stage_time").diff().dt.total_milliseconds().alias("stage_time_delta") / 1000)
         )
     )

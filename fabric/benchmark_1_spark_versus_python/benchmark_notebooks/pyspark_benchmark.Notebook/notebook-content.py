@@ -158,7 +158,7 @@ def export_with_spark(manager):
                 3,
             ),
         )
-        .withColumn("stage_time", F.col("stage_time").cast("timestamp_ntz"))
+        .withColumn("stage_time", F.col("stage_time").cast("timestamp"))
     )
 
     records.write.format("delta").mode("append").save(manager.export_abfss_path)
