@@ -54,6 +54,18 @@
       "note": "",
       "type": "Guid",
       "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "analysis_of_results_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "refresh_semantic_model_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
     }
   ]
 }

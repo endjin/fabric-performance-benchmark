@@ -124,7 +124,7 @@ The benchmark uses UK Land Registry house price data (1995-present, ~30 million 
 
 1. Navigate to **set_up** folder in your workspace
 2. Open **download_data** notebook
-3. The notebook defaults to downloading 1 year of data (~100MB). To run the full benchmark as described in our blog post, update `number_of_years` in the `LandRegistryImporter` constructor to `30` for the complete dataset (~5GB, ~30 CSV files)
+3. The notebook defaults to downloading 3 years of data (~100MB per year). To run the full benchmark as described in our blog post, update `number_of_years` in the `LandRegistryImporter` constructor to `30` for the complete dataset (~5GB, ~30 CSV files)
 4. Run all cells to download the CSV files from the Land Registry
 5. Verify the data appears in the lakehouse **Files** area under `land_registry/`
 
