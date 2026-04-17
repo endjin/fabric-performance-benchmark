@@ -48,6 +48,12 @@
       "note": "",
       "type": "Guid",
       "value": "3a4f55e4-c646-42aa-825c-e8b4a44524dd"
+    },
+    {
+      "name": "workspace_id",
+      "note": "",
+      "type": "Guid",
+      "value": "1d494acd-4e09-49b7-82e1-869df375afa0"
     }
   ]
 }

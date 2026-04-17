@@ -40,7 +40,10 @@
             "value": "@pipeline().parameters.notebook_id",
             "type": "Expression"
           },
-          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.benchmark_1_variables_workspace_id",
+            "type": "Expression"
+          },
           "parameters": {
             "v_cores": {
               "value": {
@@ -90,6 +93,11 @@
       "benchmark_1_variables_execute_pipeline_connection_id": {
         "type": "String",
         "variableName": "execute_pipeline_connection_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_workspace_id": {
+        "type": "String",
+        "variableName": "workspace_id",
         "libraryName": "benchmark_1_variables"
       }
     }
