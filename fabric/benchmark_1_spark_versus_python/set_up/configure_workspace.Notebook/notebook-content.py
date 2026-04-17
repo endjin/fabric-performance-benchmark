@@ -59,6 +59,7 @@ assert CONNECTION_ID, "Please set CONNECTION_ID to the GUID of your cloud connec
 import base64
 import json
 import logging
+import re
 import time
 
 import notebookutils
@@ -205,6 +206,74 @@ class FabricWorkspace:
                     return item_id
             url = body.get("continuationUri")
         raise ValueError(f"{item_type} '{item_name}' not found in workspace {self.workspace_id}")
+
+    def get_lakehouse_sql_endpoint(self, lakehouse_name: str) -> tuple[str, str]:
+        """Return the SQL endpoint (server, database_id) for a lakehouse."""
+        lakehouse_id = self.get_item_id(lakehouse_name, item_type="Lakehouse")
+        url = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/lakehouses/{lakehouse_id}"
+        logger.info("Fetching lakehouse properties for '%s' (%s)", lakehouse_name, lakehouse_id)
+        response = self._client.get(url)
+        response.raise_for_status()
+        props = response.json().get("properties", {})
+        sql_props = props.get("sqlEndpointProperties", {})
+        connection_string = sql_props.get("connectionString", "")
+        database_id = sql_props.get("id", "")
+        if not connection_string or not database_id:
+            raise RuntimeError(
+                f"Lakehouse '{lakehouse_name}' SQL endpoint not available. "
+                f"Provisioning status: {sql_props.get('provisioningStatus', 'unknown')}"
+            )
+        logger.info("Lakehouse SQL endpoint: server=%s, database=%s", connection_string, database_id)
+        return connection_string, database_id
+
+    def update_semantic_model_lakehouse_connection(
+        self, semantic_model_name: str, sql_endpoint_server: str, sql_endpoint_database_id: str,
+    ) -> None:
+        """Rewrite the Sql.Database() connection in a semantic model's expressions.tmdl."""
+        model_id = self.get_item_id(semantic_model_name, item_type="SemanticModel")
+        base = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/semanticModels/{model_id}"
+
+        logger.info("Fetching semantic model definition for '%s' (%s)", semantic_model_name, model_id)
+        get_response = self._client.post(f"{base}/getDefinition?format=TMDL")
+        definition_response = self._client.handle_lro_response(get_response)
+        parts = definition_response.json()["definition"]["parts"]
+
+        updated_parts = []
+        found = False
+        for part in parts:
+            if part["path"].endswith("expressions.tmdl"):
+                content = base64.b64decode(part["payload"]).decode("utf-8")
+                original = content
+                content = re.sub(
+                    r'Sql\.Database\(\s*"[^"]+"\s*,\s*"[^"]+"\s*\)',
+                    f'Sql.Database("{sql_endpoint_server}", "{sql_endpoint_database_id}")',
+                    content,
+                )
+                if content == original:
+                    logger.warning("No Sql.Database() call found in expressions.tmdl — skipping update")
+                    return
+                logger.info("Updated Sql.Database() → server=%s, database=%s",
+                            sql_endpoint_server, sql_endpoint_database_id)
+                updated_parts.append({
+                    "path": part["path"],
+                    "payload": base64.b64encode(content.encode("utf-8")).decode("utf-8"),
+                    "payloadType": "InlineBase64",
+                })
+                found = True
+            else:
+                updated_parts.append(part)
+
+        if not found:
+            logger.warning("expressions.tmdl not found in semantic model definition — skipping update")
+            return
+
+        logger.info("Updating semantic model definition for '%s'", semantic_model_name)
+        update_response = self._client.post(
+            f"{base}/updateDefinition",
+            json_body={"definition": {"parts": updated_parts}},
+        )
+        self._client.handle_lro_response(update_response)
+        logger.info("Semantic model '%s' updated successfully", semantic_model_name)
 
 # METADATA ********************
 
@@ -379,19 +448,22 @@ var_lib.update_variables(library_id, variable_updates)
 
 # ## Update semantic model
 # 
-# Repoints the Power BI semantic model's Direct Lake connection to the lakehouse
-# in the current workspace. This uses the `sempy` package (pre-installed in Fabric)
-# which handles looking up the SQL endpoint and rewriting the model expressions via TOM.
+# Repoints the Power BI semantic model's `Sql.Database()` connection to the lakehouse
+# in the current workspace. This is necessary because the semantic model definition in
+# Git contains the SQL endpoint server name and database ID from the original workspace.
 
 # CELL ********************
 
-from sempy.fabric.semantic_model import update_direct_lake_model_lakehouse_connection
+# Look up the lakehouse SQL endpoint
+sql_server, sql_database_id = workspace.get_lakehouse_sql_endpoint(LAKEHOUSE_NAME)
+logger.info("Lakehouse SQL endpoint: server=%s, database=%s", sql_server, sql_database_id)
 
-update_direct_lake_model_lakehouse_connection(
-    dataset=SEMANTIC_MODEL_NAME,
-    lakehouse=LAKEHOUSE_NAME,
+# Update the semantic model to point to this lakehouse
+workspace.update_semantic_model_lakehouse_connection(
+    semantic_model_name=SEMANTIC_MODEL_NAME,
+    sql_endpoint_server=sql_server,
+    sql_endpoint_database_id=sql_database_id,
 )
-logger.info("Semantic model '%s' repointed to lakehouse '%s'", SEMANTIC_MODEL_NAME, LAKEHOUSE_NAME)
 
 # METADATA ********************
 
