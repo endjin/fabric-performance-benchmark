@@ -40,7 +40,7 @@
             "value": "@pipeline().parameters.notebook_id",
             "type": "Expression"
           },
-          "workspaceId": "23d2362b-6b5f-4894-8472-c09991fc07a6",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
           "parameters": {
             "v_cores": {
               "value": {

@@ -92,15 +92,7 @@ fabric-performance-benchmark/
 
 Fabric will import all items from the repository into your workspace. This may take a few minutes.
 
-### 4. Configure the Lakehouse
-
-After syncing, verify the lakehouse is correctly configured:
-
-1. Open **fabric_performance_benchmark_lakehouse** in your workspace
-2. The lakehouse should be empty initially — this is expected
-3. The benchmark notebooks will write data to this lakehouse
-
-### 5. Create a Cloud Connection
+### 4. Create a Cloud Connection
 
 The benchmark pipelines use a shared cloud connection to trigger notebooks. You must create this connection manually.
 
@@ -108,10 +100,11 @@ The benchmark pipelines use a shared cloud connection to trigger notebooks. You 
 2. Click **+ New** to create a new connection
 3. Set the connection type to **Fabric Data Pipelines**
 4. Name it something descriptive (e.g. "Fabric Data Pipelines - Benchmark")
-5. Complete the creation wizard
-6. Once created, copy the **Connection ID** (GUID) from the connection details — you will need this in the next step
+5. Choose the **OAuth 2.0** autentication method
+6. Click the **Edit credentials** and complete the authentication wizard
+7. Once created, copy the **Connection ID** (GUID) from the connection details — you will need this in the next step
 
-### 6. Configure the Workspace
+### 5. Configure the Workspace
 
 This step writes the cloud connection GUID and notebook IDs into the variable library so the benchmark pipelines can reference them.
 
@@ -124,7 +117,7 @@ This step writes the cloud connection GUID and notebook IDs into the variable li
 
 > **Note**: This notebook must be run before the benchmark pipelines. The pipelines depend on the connection GUID and notebook IDs stored in the `benchmark_1_variables` variable library. If you re-sync from Git, you may need to re-run this notebook as Fabric assigns new item IDs.
 
-### 7. Download Source Data
+### 6. Download Source Data
 
 The benchmark uses UK Land Registry house price data (1995-present, ~30 million rows, ~5GB).
 
@@ -136,7 +129,7 @@ The benchmark uses UK Land Registry house price data (1995-present, ~30 million 
 
 > **Note**: Download times depend on the `number_of_years` setting and network speed. The full 30-year dataset may take 10-15 minutes.
 
-### 8. Run the Benchmarks
+### 7. Run the Benchmarks
 
 The benchmarks are orchestrated via Data Factory pipelines that run each engine across multiple configurations. Each pipeline iterates through its configurations **sequentially** (not in parallel), running 3 iterations per configuration to collect statistically meaningful results. Each pipeline takes several hours to complete.
 
