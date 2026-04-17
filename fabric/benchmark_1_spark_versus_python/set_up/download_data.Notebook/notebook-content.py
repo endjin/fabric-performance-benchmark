@@ -147,7 +147,7 @@ class LandRegistryImporter:
 land_registry_importer = LandRegistryImporter(
     data_download_path=source_path,
     storage_options=storage_options,
-    number_of_years=1
+    number_of_years=3
 )   
 
 # METADATA ********************
@@ -183,6 +183,16 @@ total_file_size = sum([file.size for file in files]) / (1024 * 1024 * 1024)
 # CELL ********************
 
 logger.info(f"Downloaded {len(files)} files, total size {total_file_size:.2f}GB")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# CELL ********************
+
 
 # METADATA ********************
 
