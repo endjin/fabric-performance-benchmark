@@ -231,6 +231,11 @@ class FabricWorkspace:
 
         Fetches the current TMDL definition, updates the ``Sql.Database(server, database)``
         call in ``expressions.tmdl``, and writes the definition back.
+
+        Note: We use the REST API directly rather than sempy (e.g. ``sempy.fabric``)
+        because sempy is only available within the Fabric notebook runtime. This module
+        is designed to run from local development environments, CI/CD pipelines, and
+        other external contexts where the Fabric runtime is not available.
         """
         model_id = self.get_item_id(semantic_model_name, item_type="SemanticModel")
         base = f"{FABRIC_API_BASE}/v1/workspaces/{self.workspace_id}/semanticModels/{model_id}"
