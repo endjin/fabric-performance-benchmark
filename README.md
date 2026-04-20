@@ -30,6 +30,8 @@ fabric-performance-benchmark/
 │   │   ├── analysis_of_results/
 │   │   │   ├── analysis_of_results.Notebook    # Process raw benchmark data
 │   │   │   ├── benchmark_analytics.Report      # Power BI report
+│   │   │   ├── refresh_semantic_model.Notebook # Sync SQL endpoint & refresh semantic model
+│   │   │   ├── run_analysis.DataPipeline       # Orchestrate analysis & refresh
 │   │   │   └── *.SemanticModel                 # Power BI semantic model
 │   │   ├── benchmark_notebooks/
 │   │   │   ├── benchmark_1_variables.VariableLibrary  # Pipeline & notebook configuration
@@ -167,14 +169,12 @@ The Python pipeline tests Polars, DuckDB, and Pandas across each vCore configura
 After the benchmarks complete, process the raw data:
 
 1. Navigate to **analysis_of_results** folder
-2. Open **analysis_of_results** notebook
-3. Run all cells to:
-   - Aggregate benchmark timing data
-   - Calculate median execution times
-   - Compute CU costs
-   - Generate visualisations
+2. Open **run_analysis** pipeline
+3. Click **Run** to execute the pipeline, which:
+   - Runs the **analysis_of_results** notebook to aggregate benchmark timing data, calculate median execution times, compute CU costs, and generate visualisations
+   - Runs the **refresh_semantic_model** notebook to sync the SQL analytics endpoint metadata and refresh the Direct Lake semantic model
 
-The notebook writes processed data to the `benchmark_repository/benchmark_analytics` Delta table.
+The pipeline writes processed data to the `benchmark_repository/benchmark_analytics` Delta table and ensures the Power BI report reflects the latest results.
 
 ### 10. View the Report
 
