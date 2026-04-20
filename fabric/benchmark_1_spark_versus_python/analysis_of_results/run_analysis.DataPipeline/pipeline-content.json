@@ -1,0 +1,74 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "run_analysis_notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.benchmark_1_variables_analysis_of_results_notebook_id",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.benchmark_1_variables_workspace_id",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "refresh_semantic_model",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "run_analysis_notebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.benchmark_1_variables_refresh_semantic_model_notebook_id",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.benchmark_1_variables_workspace_id",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "libraryVariables": {
+      "benchmark_1_variables_workspace_id": {
+        "type": "String",
+        "variableName": "workspace_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_analysis_of_results_notebook_id": {
+        "type": "String",
+        "variableName": "analysis_of_results_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_refresh_semantic_model_notebook_id": {
+        "type": "String",
+        "variableName": "refresh_semantic_model_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      }
+    }
+  }
+}

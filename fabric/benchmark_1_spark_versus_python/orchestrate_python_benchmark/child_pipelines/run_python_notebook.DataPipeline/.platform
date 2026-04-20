@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "run_python_notebook"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "a1ab370b-29f3-b03f-4240-2c7cf0e2717b"
+  }
+}

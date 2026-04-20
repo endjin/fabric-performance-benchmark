@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "analysis_of_results",
+    "description": "Processes raw benchmark data and prepares it for Power BI reporting."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "96bc98b2-75d8-8f9e-41cb-a369d73576b7"
+  }
+}

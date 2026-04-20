@@ -1,0 +1,128 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@variables('list_of_notebooks')",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "notebook_id": {
+                    "value": "@item().notebook_id",
+                    "type": "Expression"
+                  },
+                  "notebook_name": {
+                    "value": "@item().notebook_name",
+                    "type": "Expression"
+                  },
+                  "vcores_to_run": {
+                    "value": "@pipeline().parameters.vcores_to_run",
+                    "type": "Expression"
+                  },
+                  "iterations": {
+                    "value": "@pipeline().parameters.iterations",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "ab29b6f0-237d-91ff-4314-dda85e0c848c",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "@pipeline().libraryVariables.benchmark_1_variables_execute_pipeline_connection_id"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "run_vcores",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "for_each_notebook",
+        "description": "Iterate through each notebook (Polars, Pandas, DuckDB).",
+        "dependsOn": [
+          {
+            "activity": "Create List of Notebooks to Run",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "list_of_notebooks",
+          "value": {
+            "value": "@createArray(\n  json(concat(\n    '{\"notebook_name\":\"polars_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_polars_benchmark_notebook_id,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"duckdb_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_duckdb_benchmark_notebook_id,\n    '\"}'\n  )),\n  json(concat(\n    '{\"notebook_name\":\"pandas_benchmark\",\"notebook_id\":\"',\n    pipeline().libraryVariables.benchmark_1_variables_pandas_benchmark_notebook_id,\n    '\"}'\n  ))\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Create List of Notebooks to Run",
+        "description": "Looks up notebook IDs based on item references in Variable Library.",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "vcores_to_run": {
+        "type": "array",
+        "defaultValue": [
+          2,
+          4,
+          8,
+          16,
+          32,
+          64
+        ]
+      },
+      "iterations": {
+        "type": "int",
+        "defaultValue": 3
+      }
+    },
+    "libraryVariables": {
+      "benchmark_1_variables_execute_pipeline_connection_id": {
+        "type": "String",
+        "variableName": "execute_pipeline_connection_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_polars_benchmark_notebook_id": {
+        "type": "String",
+        "variableName": "polars_benchmark_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_duckdb_benchmark_notebook_id": {
+        "type": "String",
+        "variableName": "duckdb_benchmark_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      },
+      "benchmark_1_variables_pandas_benchmark_notebook_id": {
+        "type": "String",
+        "variableName": "pandas_benchmark_notebook_id",
+        "libraryName": "benchmark_1_variables"
+      }
+    },
+    "variables": {
+      "list_of_notebooks": {
+        "type": "Array"
+      }
+    }
+  }
+}

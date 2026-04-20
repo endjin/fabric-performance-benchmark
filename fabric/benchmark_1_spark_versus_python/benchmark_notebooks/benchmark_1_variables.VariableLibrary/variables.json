@@ -1,0 +1,71 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "workspace_name",
+      "note": "",
+      "type": "String",
+      "value": "fabric_performance_benchmark_workspace"
+    },
+    {
+      "name": "lakehouse_name",
+      "note": "",
+      "type": "String",
+      "value": "fabric_performance_benchmark_lakehouse"
+    },
+    {
+      "name": "raw_data_relative_path",
+      "note": "",
+      "type": "String",
+      "value": "land_registry"
+    },
+    {
+      "name": "execute_pipeline_connection_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "polars_benchmark_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "duckdb_benchmark_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "pandas_benchmark_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "pyspark_benchmark_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "workspace_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "analysis_of_results_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "name": "refresh_semantic_model_notebook_id",
+      "note": "",
+      "type": "Guid",
+      "value": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

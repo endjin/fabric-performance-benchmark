@@ -1,0 +1,144 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "set_timestamp",
+        "type": "SetVariable",
+        "dependsOn": [],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "timestamp",
+          "value": {
+            "value": "@utcNow('yyyyMMdd_HHmmss')",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "run_benchmark_notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "set_timestamp",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().parameters.notebook_id",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.benchmark_1_variables_workspace_id",
+            "type": "Expression"
+          },
+          "parameters": {
+            "run_timestamp": {
+              "value": {
+                "value": "@variables('timestamp')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "notebook": {
+              "value": {
+                "value": "@pipeline().parameters.notebook_name",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "driver_memory": {
+              "value": {
+                "value": "@pipeline().parameters.driver_memory",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "driver_cores": {
+              "value": {
+                "value": "@pipeline().parameters.driver_cores",
+                "type": "Expression"
+              },
+              "type": "int"
+            },
+            "executor_memory": {
+              "value": {
+                "value": "@pipeline().parameters.executor_memory",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "executor_cores": {
+              "value": {
+                "value": "@pipeline().parameters.executor_cores",
+                "type": "Expression"
+              },
+              "type": "int"
+            },
+            "executor_number": {
+              "value": {
+                "value": "@pipeline().parameters.executor_number",
+                "type": "Expression"
+              },
+              "type": "int"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "notebook_id": {
+        "type": "string",
+        "defaultValue": "3a4f55e4-c646-42aa-825c-e8b4a44524dd"
+      },
+      "notebook_name": {
+        "type": "string",
+        "defaultValue": "pyspark_benchmark"
+      },
+      "driver_memory": {
+        "type": "string",
+        "defaultValue": "28g"
+      },
+      "driver_cores": {
+        "type": "int",
+        "defaultValue": 4
+      },
+      "executor_memory": {
+        "type": "string",
+        "defaultValue": "28g"
+      },
+      "executor_cores": {
+        "type": "int",
+        "defaultValue": 4
+      },
+      "executor_number": {
+        "type": "int",
+        "defaultValue": 1
+      }
+    },
+    "variables": {
+      "timestamp": {
+        "type": "String"
+      }
+    },
+    "libraryVariables": {
+      "benchmark_1_variables_workspace_id": {
+        "type": "String",
+        "variableName": "workspace_id",
+        "libraryName": "benchmark_1_variables"
+      }
+    }
+  }
+}

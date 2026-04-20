@@ -1,0 +1,88 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@pipeline().parameters.vcores_to_run",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "iterations": {
+                    "value": "@pipeline().parameters.iterations",
+                    "type": "Expression"
+                  },
+                  "v_cores": {
+                    "value": "@item()",
+                    "type": "Expression"
+                  },
+                  "notebook_id": {
+                    "value": "@pipeline().parameters.notebook_id",
+                    "type": "Expression"
+                  },
+                  "notebook_name": {
+                    "value": "@pipeline().parameters.notebook_name",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "b20bbf98-cae9-8bb3-4a25-3438e62a9805",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "@pipeline().libraryVariables.benchmark_1_variables_pipeline_connection"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "run_iterations",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "for_each_vcore",
+        "description": "Run each vCore configuration.",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "vcores_to_run": {
+        "type": "array",
+        "defaultValue": [
+          2,
+          4
+        ]
+      },
+      "iterations": {
+        "type": "int",
+        "defaultValue": 2
+      },
+      "notebook_id": {
+        "type": "string",
+        "defaultValue": "5204a490-7561-4d6a-a431-50e2511a08bb"
+      },
+      "notebook_name": {
+        "type": "string",
+        "defaultValue": "polars_benchmark"
+      }
+    },
+    "libraryVariables": {
+      "benchmark_1_variables_pipeline_connection": {
+        "type": "String",
+        "variableName": "execute_pipeline_connection_id",
+        "libraryName": "benchmark_1_variables"
+      }
+    }
+  }
+}

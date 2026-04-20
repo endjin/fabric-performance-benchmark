@@ -1,0 +1,127 @@
+{
+  "config": "{\"version\":\"5.69\",\"themeCollection\":{\"baseTheme\":{\"name\":\"CY25SU12\",\"type\":2,\"version\":{\"visual\":\"2.5.0\",\"report\":\"3.1.0\",\"page\":\"2.3.0\"}}},\"activeSectionIndex\":0,\"defaultDrillFilterOtherVisuals\":true,\"linguisticSchemaSyncVersion\":0,\"settings\":{\"useNewFilterPaneExperience\":true,\"allowChangeFilterTypes\":true,\"useStylableVisualContainerHeader\":true,\"queryLimitOption\":6,\"useEnhancedTooltips\":true,\"exportDataMode\":1,\"useDefaultAggregateDisplayName\":true},\"objects\":{\"section\":[{\"properties\":{\"verticalAlignment\":{\"expr\":{\"Literal\":{\"Value\":\"'Top'\"}}}}}],\"outspacePane\":[{\"properties\":{\"expanded\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]}}",
+  "filters": "[]",
+  "layoutOptimization": 0,
+  "resourcePackages": [
+    {
+      "resourcePackage": {
+        "disabled": false,
+        "items": [
+          {
+            "name": "CY25SU12",
+            "path": "BaseThemes/CY25SU12.json",
+            "type": 202
+          }
+        ],
+        "name": "SharedResources",
+        "type": 2
+      }
+    }
+  ],
+  "sections": [
+    {
+      "config": "{}",
+      "displayName": "Run Counts",
+      "displayOption": 1,
+      "filters": "[]",
+      "height": 720.00,
+      "name": "15263972bc0cfd44728c",
+      "ordinal": 3,
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"7f84854da98d5bed58ec\",\"layouts\":[{\"id\":0,\"position\":{\"x\":9.85043426784938,\"y\":0,\"z\":0,\"width\":1269.9482948396585,\"height\":719.8394272659162,\"tabOrder\":0}}],\"singleVisual\":{\"visualType\":\"columnChart\",\"projections\":{\"Category\":[{\"queryRef\":\"benchmark_analytics.platform\",\"active\":true},{\"queryRef\":\"benchmark_analytics.workload_name\",\"active\":true},{\"queryRef\":\"benchmark_analytics.configuration\",\"active\":true},{\"queryRef\":\"benchmark_analytics.cu_per_second\",\"active\":true}],\"Y\":[{\"queryRef\":\"benchmark_analytics.Run Count\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"b1\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"platform\"},\"Name\":\"benchmark_analytics.platform\",\"NativeReferenceName\":\"platform1\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"workload_name\"},\"Name\":\"benchmark_analytics.workload_name\",\"NativeReferenceName\":\"workload_name1\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"Run Count\"},\"Name\":\"benchmark_analytics.Run Count\",\"NativeReferenceName\":\"Run Count\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"configuration\"},\"Name\":\"benchmark_analytics.configuration\",\"NativeReferenceName\":\"configuration\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"cu_per_second\"},\"Name\":\"benchmark_analytics.cu_per_second\",\"NativeReferenceName\":\"cu_per_second\"}],\"OrderBy\":[{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"platform\"}}},{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"workload_name\"}}},{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"configuration\"}}},{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"cu_per_second\"}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 719.84,
+          "width": 1269.95,
+          "x": 9.85,
+          "y": 0.00,
+          "z": 0.00
+        }
+      ],
+      "width": 1280.00
+    },
+    {
+      "config": "{}",
+      "displayName": "Data",
+      "displayOption": 1,
+      "filters": "[]",
+      "height": 720.00,
+      "name": "3509f5fdb4ed86f003dd",
+      "ordinal": 4,
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"32074f7b2fdd2eb5b174\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":0,\"z\":0,\"width\":1280.3337129684262,\"height\":720.5389903536095,\"tabOrder\":0}}],\"singleVisual\":{\"visualType\":\"tableEx\",\"projections\":{\"Values\":[{\"queryRef\":\"benchmark_analytics.run_timestamp\"},{\"queryRef\":\"benchmark_analytics.platform\"},{\"queryRef\":\"benchmark_analytics.workload_name\"},{\"queryRef\":\"Sum(benchmark_analytics.cu_per_second)\"},{\"queryRef\":\"benchmark_analytics.configuration\"},{\"queryRef\":\"benchmark_analytics.stage_name\"},{\"queryRef\":\"Sum(benchmark_analytics.stage_time_delta)\"},{\"queryRef\":\"Sum(benchmark_analytics.cpu_count)\"},{\"queryRef\":\"Sum(benchmark_analytics.memory_usage)\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"b\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"run_timestamp\"},\"Name\":\"benchmark_analytics.run_timestamp\",\"NativeReferenceName\":\"run_timestamp\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"workload_name\"},\"Name\":\"benchmark_analytics.workload_name\",\"NativeReferenceName\":\"workload_name\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"platform\"},\"Name\":\"benchmark_analytics.platform\",\"NativeReferenceName\":\"platform\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"configuration\"},\"Name\":\"benchmark_analytics.configuration\",\"NativeReferenceName\":\"configuration\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"stage_name\"},\"Name\":\"benchmark_analytics.stage_name\",\"NativeReferenceName\":\"stage_name\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"stage_time_delta\"},\"Name\":\"Sum(benchmark_analytics.stage_time_delta)\",\"NativeReferenceName\":\"stage_time_delta\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"cpu_count\"},\"Name\":\"Sum(benchmark_analytics.cpu_count)\",\"NativeReferenceName\":\"cpu_count\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"cu_per_second\"}},\"Function\":0},\"Name\":\"Sum(benchmark_analytics.cu_per_second)\",\"NativeReferenceName\":\"Sum of cu_per_second\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"memory_usage\"}},\"Function\":0},\"Name\":\"Sum(benchmark_analytics.memory_usage)\",\"NativeReferenceName\":\"Sum of memory_usage\"}]},\"drillFilterOtherVisuals\":true}}",
+          "filters": "[]",
+          "height": 720.54,
+          "width": 1280.33,
+          "x": 0.00,
+          "y": 0.00,
+          "z": 0.00
+        }
+      ],
+      "width": 1280.00
+    },
+    {
+      "config": "{}",
+      "displayName": "Scatter",
+      "displayOption": 1,
+      "filters": "[{\"name\":\"9f841ef737d02cfb7243\",\"expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"benchmark_analytics\"}},\"Property\":\"stage_name\"}},\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"b\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Where\":[{\"Condition\":{\"Not\":{\"Expression\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"stage_name\"}}],\"Values\":[[{\"Literal\":{\"Value\":\"'setup'\"}}]]}}}}}]},\"type\":\"Categorical\",\"howCreated\":1,\"objects\":{\"general\":[{\"properties\":{\"isInvertedSelectionMode\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]}}]",
+      "height": 720.00,
+      "name": "3da2eb05cbe481582910",
+      "ordinal": 1,
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"27e6a3c82b1f6aa106f5\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":0,\"z\":0,\"width\":1280,\"height\":720.0436919716002,\"tabOrder\":0}}],\"singleVisual\":{\"visualType\":\"scatterChart\",\"projections\":{\"Category\":[{\"queryRef\":\"benchmark_analytics.platform\",\"active\":true},{\"queryRef\":\"benchmark_analytics.workload_name\",\"active\":true},{\"queryRef\":\"benchmark_analytics.configuration\",\"active\":true}],\"Series\":[{\"queryRef\":\"benchmark_analytics.workload_name\"}],\"X\":[{\"queryRef\":\"benchmark_analytics.Median Time\",\"active\":true}],\"Size\":[{\"queryRef\":\"benchmark_analytics.Run Count\"}],\"Y\":[{\"queryRef\":\"benchmark_analytics.Median Cost\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"b\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"configuration\"},\"Name\":\"benchmark_analytics.configuration\",\"NativeReferenceName\":\"configuration\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"platform\"},\"Name\":\"benchmark_analytics.platform\",\"NativeReferenceName\":\"platform\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"workload_name\"},\"Name\":\"benchmark_analytics.workload_name\",\"NativeReferenceName\":\"workload_name\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"Run Count\"},\"Name\":\"benchmark_analytics.Run Count\",\"NativeReferenceName\":\"Run Count\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"Median Cost\"},\"Name\":\"benchmark_analytics.Median Cost\",\"NativeReferenceName\":\"Median Cost\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"Median Time\"},\"Name\":\"benchmark_analytics.Median Time\",\"NativeReferenceName\":\"Median Time\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"valueAxis\":[{\"properties\":{\"logAxisScale\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"invertAxis\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}},\"gridlineAutoScale\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 720.04,
+          "width": 1280.00,
+          "x": 0.00,
+          "y": 0.00,
+          "z": 0.00
+        }
+      ],
+      "width": 1280.00
+    },
+    {
+      "config": "{}",
+      "displayName": "Memory Based Ananlysis",
+      "displayOption": 1,
+      "filters": "[]",
+      "height": 720.00,
+      "name": "595398a2a360a88934ee",
+      "ordinal": 2,
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"12dd97dd56258fcb4521\",\"layouts\":[{\"id\":0,\"position\":{\"x\":9.994794377928162,\"y\":0,\"z\":0,\"width\":1270.0052056220718,\"height\":720.2915148360229,\"tabOrder\":0}}],\"singleVisual\":{\"visualType\":\"clusteredColumnChart\",\"projections\":{\"Category\":[{\"queryRef\":\"benchmark_analytics.configuration\",\"active\":true},{\"queryRef\":\"benchmark_analytics.stage_name\",\"active\":true}],\"Y\":[{\"queryRef\":\"Sum(benchmark_analytics.memory_usage)\"}],\"Series\":[{\"queryRef\":\"benchmark_analytics.workload_name\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"b1\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"configuration\"},\"Name\":\"benchmark_analytics.configuration\",\"NativeReferenceName\":\"configuration\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"stage_name\"},\"Name\":\"benchmark_analytics.stage_name\",\"NativeReferenceName\":\"stage_name\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"workload_name\"},\"Name\":\"benchmark_analytics.workload_name\",\"NativeReferenceName\":\"workload_name\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"memory_usage\"}},\"Function\":4},\"Name\":\"Sum(benchmark_analytics.memory_usage)\",\"NativeReferenceName\":\"Max of memory_usage\"}],\"OrderBy\":[{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"configuration\"}}},{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"stage_name\"}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 720.29,
+          "width": 1270.01,
+          "x": 9.99,
+          "y": 0.00,
+          "z": 0.00
+        }
+      ],
+      "width": 1280.00
+    },
+    {
+      "config": "{}",
+      "displayName": "Time Based Analysis",
+      "displayOption": 1,
+      "filters": "[{\"name\":\"291529a5403ace0668c3\",\"expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"benchmark_analytics\"}},\"Property\":\"stage_name\"}},\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"b\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Where\":[{\"Condition\":{\"Not\":{\"Expression\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b\"}},\"Property\":\"stage_name\"}}],\"Values\":[[{\"Literal\":{\"Value\":\"'setup'\"}}]]}}}}}]},\"type\":\"Categorical\",\"howCreated\":1,\"objects\":{\"general\":[{\"properties\":{\"isInvertedSelectionMode\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]}}]",
+      "height": 720.00,
+      "name": "b57fb0e2a405a5ee5784",
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"76eaa72f73676c0177a7\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":0,\"z\":0,\"width\":1280,\"height\":720,\"tabOrder\":0}}],\"singleVisual\":{\"visualType\":\"ribbonChart\",\"projections\":{\"Category\":[{\"queryRef\":\"benchmark_analytics.workload_name\",\"active\":true},{\"queryRef\":\"benchmark_analytics.configuration\",\"active\":true},{\"queryRef\":\"benchmark_analytics.cu_per_second\",\"active\":true}],\"Y\":[{\"queryRef\":\"benchmark_analytics.Median Stage Time\"}],\"Series\":[{\"queryRef\":\"benchmark_analytics.stage_name\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"b1\",\"Entity\":\"benchmark_analytics\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"workload_name\"},\"Name\":\"benchmark_analytics.workload_name\",\"NativeReferenceName\":\"workload_name1\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"Median Stage Time\"},\"Name\":\"benchmark_analytics.Median Stage Time\",\"NativeReferenceName\":\"Median Stage Time\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"configuration\"},\"Name\":\"benchmark_analytics.configuration\",\"NativeReferenceName\":\"configuration\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"stage_name\"},\"Name\":\"benchmark_analytics.stage_name\",\"NativeReferenceName\":\"stage_name\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"cu_per_second\"},\"Name\":\"benchmark_analytics.cu_per_second\",\"NativeReferenceName\":\"cu_per_second\"}],\"OrderBy\":[{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"workload_name\"}}},{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"configuration\"}}},{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"b1\"}},\"Property\":\"cu_per_second\"}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true,\"objects\":{\"labels\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"enableDetailDataLabel\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"detailFontSize\":{\"expr\":{\"Literal\":{\"Value\":\"8D\"}}},\"fontSize\":{\"expr\":{\"Literal\":{\"Value\":\"8D\"}}},\"enableBackground\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"backgroundTransparency\":{\"expr\":{\"Literal\":{\"Value\":\"90D\"}}},\"horizontalAlignment\":{\"expr\":{\"Literal\":{\"Value\":\"'center'\"}}},\"labelContentLayout\":{\"expr\":{\"Literal\":{\"Value\":\"'MultiLine'\"}}},\"labelOverflow\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"optimizeLabelDisplay\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}},{\"properties\":{\"dynamicLabelDetail\":{\"expr\":{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"benchmarks\"}},\"Property\":\"stage_name\"}},\"Function\":3}}}},\"selector\":{\"data\":[{\"dataViewWildcard\":{\"matchingOption\":1}}],\"highlightMatching\":1}}],\"totals\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"labelPrecision\":{\"expr\":{\"Literal\":{\"Value\":\"0L\"}}},\"bold\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"enableBackground\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}},{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":1,\"Percent\":0}}}}}},\"selector\":{\"data\":[{\"dataViewWildcard\":{\"matchingOption\":1}}]}}]}}}",
+          "filters": "[{\"name\":\"6d1e5a36dbc51a261221\",\"expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"benchmarks\"}},\"Property\":\"stage_name\"}},\"type\":\"Categorical\",\"howCreated\":1,\"objects\":{\"general\":[{\"properties\":{\"isInvertedSelectionMode\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]},\"isHiddenInViewMode\":false}]",
+          "height": 720.00,
+          "width": 1280.00,
+          "x": 0.00,
+          "y": 0.00,
+          "z": 0.00
+        }
+      ],
+      "width": 1280.00
+    }
+  ]
+}

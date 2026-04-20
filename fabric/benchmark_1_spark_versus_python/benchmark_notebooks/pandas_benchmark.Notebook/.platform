@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "pandas_benchmark",
+    "description": "Pandas benchmark notebook for processing UK Land Registry data on a Fabric Python Notebook."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "97ea7510-e012-93af-42d8-7deb9e895c1f"
+  }
+}

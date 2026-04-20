@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "helper_methods_pyspark",
+    "description": "Helper methods to enable connection to lakehouse and capturing benchmarks for PySpark notebooks."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "f1617fba-2019-9d38-4022-9ba8c2371ffa"
+  }
+}
