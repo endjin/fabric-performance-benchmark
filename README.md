@@ -18,8 +18,8 @@ For detailed analysis, see our blog post: [Fabric Performance Benchmarking](http
 Before you begin, ensure you have:
 
 1. **GitHub Account** — to fork the repository and enable Git integration with Fabric
-2. **Microsoft Fabric Capacity** — an active Fabric capacity (**F32 or above**) with permissions to create workspaces. The largest default benchmark configuration (Python Notebook with 64 vCores) consumes 32 CUs per second. See [Capacity Requirements](#capacity-requirements) for details. You can run on smaller capacities by reducing the benchmark configurations — see [Scaling Back the Benchmarks](#scaling-back-the-benchmarks)
-3. **Fabric Workspace Admin** — permissions to create and configure workspaces
+2. **Microsoft Fabric Capacity** — an active Fabric capacity (**F32 or above**). The largest default benchmark configuration (Python Notebook with 64 vCores) consumes 32 CUs per second. See [Capacity Requirements](#capacity-requirements) for details. You can run on smaller capacities by reducing the benchmark configurations — see [Scaling Back the Benchmarks](#scaling-back-the-benchmarks)
+3. **Workspace with Admin permissions** — a blank Fabric workspace assigned to your capacity, where you have Admin permissions. You can create this yourself or have someone create it for you
 
 ## Repository Structure
 
@@ -72,6 +72,8 @@ fabric-performance-benchmark/
 
 ### 2. Create a Fabric Workspace
 
+If you already have a blank workspace with Admin permissions assigned to your Fabric capacity, skip to Step 3.
+
 1. Sign in to [Microsoft Fabric](https://app.fabric.microsoft.com)
 2. Click **Workspaces** in the left navigation pane
 3. Click **+ New workspace**
@@ -94,6 +96,8 @@ fabric-performance-benchmark/
 
 Fabric will import all items from the repository into your workspace. This may take a few minutes.
 
+See [Get started with Git integration](https://learn.microsoft.com/en-us/fabric/cicd/git-integration/git-get-started?tabs=github) for more details about this process.
+
 ### 4. Create a Cloud Connection
 
 The benchmark pipelines use a shared cloud connection to trigger notebooks. You must create this connection manually.
@@ -105,6 +109,8 @@ The benchmark pipelines use a shared cloud connection to trigger notebooks. You 
 5. Choose the **OAuth 2.0** autentication method
 6. Click the **Edit credentials** and complete the authentication wizard
 7. Once created, copy the **Connection ID** (GUID) from the connection details — you will need this in the next step
+
+See [Data source management](https://learn.microsoft.com/en-us/fabric/data-factory/data-source-management) for more information about Cloud Connections.
 
 ### 5. Configure the Workspace
 
@@ -173,6 +179,7 @@ After the benchmarks complete, process the raw data:
 3. Click **Run** to execute the pipeline, which:
    - Runs the **analysis_of_results** notebook to aggregate benchmark timing data, calculate median execution times, compute CU costs, and generate visualisations
    - Runs the **refresh_semantic_model** notebook to sync the SQL analytics endpoint metadata and refresh the Direct Lake semantic model
+4. At this stage you can commit all of the changes to artfacts back to your Git fork so that a re-sync wouldn't break things.
 
 The pipeline writes processed data to the `benchmark_repository/benchmark_analytics` Delta table and ensures the Power BI report reflects the latest results.
 
@@ -284,7 +291,7 @@ The **largest default Python configuration** (64 vCores) consumes **32 CUs per s
 
 If your Fabric capacity is smaller than F32, you can reduce the benchmark configurations to fit:
 
-- **Pipeline**: `run_benchmarks` — edit the `vcores_to_run` parameter to remove larger vCore sizes. For example, `[2, 4, 8, 16]` requires only F16
+- **Pipeline**: `run_benchmarks` — edit the `vcores_to_run` parameter to remove larger vCore sizes. For example, `[2, 4, 8, 16]` requires only F8 (0.5 CUs per vCore)
 - **Pipeline**: `run_spark_benchmarks` — edit the `configurations_to_run` parameter to remove higher-CU configurations. For example, removing the 4-executor configurations reduces the maximum to 12 CUs (F16)
 
 You can also reduce the `iterations` parameter (default: `3`) to shorten overall run time, though fewer iterations may reduce the statistical reliability of the results.
